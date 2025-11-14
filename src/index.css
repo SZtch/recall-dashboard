@@ -1,0 +1,27 @@
+/* src/index.css */
+
+/* Tailwind directives (kalau kamu pakai Tailwind) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset layout biar full-screen hitam */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0; /* hilangin border putih di tepi */
+  background-color: #000;
+  color: #fff;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+}
+
+/* Optional: biar smoothing text enak */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
