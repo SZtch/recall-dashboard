@@ -76,7 +76,6 @@ export default function Chatbot({ agentName, env }) {
 
       setMessages((prev) => [
         ...prev,
-        { ...userMessage, side: "user" },
         { role: "assistant", content: reply, side: "assistant" },
       ]);
     } catch (err) {

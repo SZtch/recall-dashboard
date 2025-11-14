@@ -1127,7 +1127,7 @@ Number of positions: ${(pnl || []).length}.`;
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer {openaiKey}`,
+          Authorization: `Bearer ${openaiKey}`,
         },
         body: JSON.stringify({
           model: "gpt-4o-mini",
@@ -1145,6 +1145,13 @@ Number of positions: ${(pnl || []).length}.`;
           ],
         }),
       });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(
+          errorData?.error?.message || `OpenAI API error: ${res.status}`
+        );
+      }
 
       const data = await res.json();
       const reply =
@@ -1316,7 +1323,6 @@ export default function Dashboard() {
     if (storedOpenAI) {
       setOpenaiKey(storedOpenAI);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function connect(agent, key, environment, opts = {}) {
