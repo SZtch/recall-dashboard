@@ -1094,22 +1094,66 @@ function ChatbotPanel({
   pnl,
   env,
   agentName,
+  apiKey,
+  onExecuteTrade,
 }) {
   const [tempKey, setTempKey] = useState("");
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [pendingTrade, setPendingTrade] = useState(null);
 
   const hasKey = !!openaiKey;
 
   const contextSummary = (() => {
     const totalUsd =
       (balances || []).reduce((sum, b) => sum + (b.usd || 0), 0) || 0;
+    const balancesList = (balances || [])
+      .map((b) => `${b.token}: ${b.amount} ($${b.usd?.toFixed(2) || 0})`)
+      .join(", ");
     return `Environment: ${env}. Agent: ${agentName || "-"}.
 Total balance (approx): $${totalUsd.toFixed(2)}.
+Balances: ${balancesList || "None"}.
 Number of positions: ${(pnl || []).length}.`;
   })();
+
+  async function handleExecuteTrade(tradeParams) {
+    try {
+      setLoading(true);
+      setError("");
+
+      await executeTrade(apiKey, env, {
+        fromToken: tradeParams.fromToken,
+        toToken: tradeParams.toToken,
+        amount: parseFloat(tradeParams.amount),
+        reason: tradeParams.reason || "CHATBOT_TRADE",
+      });
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `✅ Trade executed successfully!\n\nFrom: ${tradeParams.amount} ${tradeParams.fromToken}\nTo: ${tradeParams.toToken}\n\nTransaction completed.`,
+        },
+      ]);
+
+      if (onExecuteTrade) onExecuteTrade();
+      setPendingTrade(null);
+    } catch (err) {
+      console.error(err);
+      setError(`Trade failed: ${err.message}`);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `❌ Trade failed: ${err.message}`,
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleSend(e) {
     e.preventDefault();
@@ -1135,7 +1179,7 @@ Number of positions: ${(pnl || []).length}.`;
             {
               role: "system",
               content:
-                "You are an assistant helping a user understand their Recall trading agent performance. Be concise and practical.",
+                "You are an assistant helping a user manage their Recall trading agent. You can execute trades when requested. Be concise and practical. When executing trades, always confirm the details clearly.",
             },
             {
               role: "system",
@@ -1143,6 +1187,41 @@ Number of positions: ${(pnl || []).length}.`;
             },
             ...newMessages,
           ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "execute_trade",
+                description:
+                  "Execute a trade to swap tokens. Use this when the user wants to buy, sell, or swap tokens.",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    fromToken: {
+                      type: "string",
+                      description:
+                        "The token to sell/swap from (e.g., USDC, ETH, SOL)",
+                    },
+                    toToken: {
+                      type: "string",
+                      description:
+                        "The token to buy/swap to (e.g., USDC, ETH, SOL)",
+                    },
+                    amount: {
+                      type: "string",
+                      description: "The amount of fromToken to trade",
+                    },
+                    reason: {
+                      type: "string",
+                      description: "Optional reason for the trade",
+                    },
+                  },
+                  required: ["fromToken", "toToken", "amount"],
+                },
+              },
+            },
+          ],
+          tool_choice: "auto",
         }),
       });
 
@@ -1154,11 +1233,30 @@ Number of positions: ${(pnl || []).length}.`;
       }
 
       const data = await res.json();
-      const reply =
-        data?.choices?.[0]?.message?.content ||
-        "I couldn't generate a response. Please try again.";
+      const choice = data?.choices?.[0];
 
-      setMessages([...newMessages, { role: "assistant", content: reply }]);
+      // Check if AI wants to call a function
+      if (choice?.message?.tool_calls && choice.message.tool_calls.length > 0) {
+        const toolCall = choice.message.tool_calls[0];
+        if (toolCall.function.name === "execute_trade") {
+          const tradeParams = JSON.parse(toolCall.function.arguments);
+          // Show confirmation dialog
+          setPendingTrade(tradeParams);
+          setMessages([
+            ...newMessages,
+            {
+              role: "assistant",
+              content: `I want to execute this trade for you:\n\n📊 **Trade Details:**\n• Sell: ${tradeParams.amount} ${tradeParams.fromToken}\n• Buy: ${tradeParams.toToken}\n• Reason: ${tradeParams.reason || "User requested"}\n\nPlease confirm to proceed.`,
+            },
+          ]);
+        }
+      } else {
+        // Normal text response
+        const reply =
+          choice?.message?.content ||
+          "I couldn't generate a response. Please try again.";
+        setMessages([...newMessages, { role: "assistant", content: reply }]);
+      }
     } catch (err) {
       console.error(err);
       setError(
@@ -1264,6 +1362,81 @@ Number of positions: ${(pnl || []).length}.`;
       {error && (
         <div className="mb-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
           {error}
+        </div>
+      )}
+
+      {pendingTrade && (
+        <div className="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20">
+              <svg
+                className="h-5 w-5 text-amber-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-amber-200">
+                Trade Confirmation Required
+              </p>
+              <p className="text-xs text-amber-300/80">
+                Review the details before executing
+              </p>
+            </div>
+          </div>
+          <div className="mb-3 space-y-1.5 rounded-lg bg-neutral-900/60 p-3 text-xs">
+            <div className="flex justify-between">
+              <span className="text-neutral-400">From:</span>
+              <span className="font-semibold text-neutral-100">
+                {pendingTrade.amount} {pendingTrade.fromToken}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-neutral-400">To:</span>
+              <span className="font-semibold text-neutral-100">
+                {pendingTrade.toToken}
+              </span>
+            </div>
+            {pendingTrade.reason && (
+              <div className="flex justify-between">
+                <span className="text-neutral-400">Reason:</span>
+                <span className="text-neutral-100">{pendingTrade.reason}</span>
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleExecuteTrade(pendingTrade)}
+              disabled={loading}
+              className="flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-black transition-all hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              ✓ Confirm & Execute
+            </button>
+            <button
+              onClick={() => {
+                setPendingTrade(null);
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    role: "assistant",
+                    content: "Trade cancelled. How else can I help you?",
+                  },
+                ]);
+              }}
+              disabled={loading}
+              className="flex-1 rounded-lg bg-neutral-700 px-4 py-2 text-xs font-semibold text-neutral-100 transition-all hover:bg-neutral-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              ✗ Cancel
+            </button>
+          </div>
         </div>
       )}
 
@@ -1830,6 +2003,8 @@ export default function Dashboard() {
                   pnl={pnlData}
                   env={env}
                   agentName={agentName}
+                  apiKey={apiKey}
+                  onExecuteTrade={refreshData}
                 />
               )}
             </div>
