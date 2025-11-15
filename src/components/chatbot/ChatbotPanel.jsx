@@ -322,11 +322,11 @@ Number of positions: ${(pnl || []).length}.`;
 
   if (!hasKey) {
     return (
-      <div className="mx-auto max-w-md rounded-2xl border border-neutral-800/60 bg-neutral-950/90 p-6 text-center shadow-xl">
-        <h2 className="mb-2 text-lg font-semibold text-neutral-100">
+      <div className="mx-auto max-w-md rounded-xl border border-neutral-800/60 bg-neutral-950/90 p-5 text-center shadow-xl sm:rounded-2xl sm:p-6">
+        <h2 className="mb-2 text-base font-semibold text-neutral-100 sm:mb-3 sm:text-lg">
           Enable Chatbot
         </h2>
-        <p className="mb-4 text-sm text-neutral-400">
+        <p className="mb-5 text-sm leading-relaxed text-neutral-400 sm:mb-4 sm:text-base">
           Enter your{" "}
           <span className="font-medium text-neutral-200">
             OpenAI API Key
@@ -342,7 +342,7 @@ Number of positions: ${(pnl || []).length}.`;
           placeholder="OpenAI API Key..."
           value={tempKey}
           onChange={(e) => setTempKey(e.target.value)}
-          className="mb-3 w-full rounded-lg border border-neutral-700/70 bg-neutral-900/70 px-3 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-600 outline-none transition-all duration-200 focus:border-purple-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-purple-500/20"
+          className="mb-4 w-full rounded-lg border border-neutral-700/70 bg-neutral-900/70 px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-600 outline-none transition-all duration-200 focus:border-purple-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-purple-500/20 sm:mb-3 sm:px-3 sm:py-2.5"
         />
 
         <button
@@ -351,12 +351,12 @@ Number of positions: ${(pnl || []).length}.`;
             onSaveKey(tempKey);
             setTempKey("");
           }}
-          className="w-full rounded-lg bg-gradient-to-r from-purple-500 to-sky-500 py-2.5 text-sm font-semibold text-black shadow-lg shadow-purple-500/40 transition-all hover:shadow-purple-500/60"
+          className="w-full rounded-lg bg-gradient-to-r from-purple-500 to-sky-500 py-3.5 text-sm font-semibold text-black shadow-lg shadow-purple-500/40 transition-all active:scale-98 hover:shadow-purple-500/60 sm:py-2.5"
         >
           Save & Activate
         </button>
 
-        <p className="mt-3 text-[11px] text-neutral-500">
+        <p className="mt-4 text-xs text-neutral-500 sm:mt-3 sm:text-[11px]">
           You can remove this key anytime by logging out.
         </p>
       </div>
@@ -364,37 +364,39 @@ Number of positions: ${(pnl || []).length}.`;
   }
 
   return (
-    <div className="mx-auto flex h-[480px] max-h-[70vh] max-w-3xl flex-col rounded-2xl border border-neutral-800/60 bg-neutral-950/95 p-4 shadow-xl md:p-5">
-      <div className="mb-3 flex items-center justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-400">
+    <div className="mx-auto flex min-h-[500px] max-h-[calc(100vh-200px)] max-w-3xl flex-col rounded-xl border border-neutral-800/60 bg-neutral-950/95 p-4 shadow-xl sm:h-[550px] sm:rounded-2xl sm:p-5 md:h-[600px]">
+      {/* Mobile-optimized header */}
+      <div className="mb-4 flex flex-col gap-3 sm:mb-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex-1">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-400 sm:text-sm">
             Chatbot
           </p>
-          <p className="text-[11px] text-neutral-500">
+          <p className="mt-0.5 text-xs leading-relaxed text-neutral-500 sm:text-[11px]">
             Ask anything about your agent&apos;s performance, balances, or
             strategy ideas.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-2.5">
           {messages.length > 0 && (
             <button
               onClick={clearHistory}
-              className="rounded-lg bg-neutral-800/80 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 transition-all hover:bg-neutral-700 hover:text-neutral-200"
+              className="rounded-lg bg-neutral-800/80 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 transition-all active:scale-95 hover:bg-neutral-700 hover:text-neutral-200 sm:px-2.5 sm:py-1.5 sm:text-[11px]"
             >
               Clear
             </button>
           )}
-          <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-300">
+          <span className="rounded-full bg-emerald-500/10 px-3 py-1.5 text-[10px] font-medium text-emerald-300 sm:px-3 sm:py-1 sm:text-[11px]">
             OpenAI Connected
           </span>
         </div>
       </div>
 
-      <div className="mb-3 flex-1 space-y-2 overflow-y-auto rounded-xl bg-neutral-900/60 p-3 text-sm">
+      {/* Mobile-optimized message area */}
+      <div className="mb-3 flex-1 space-y-2.5 overflow-y-auto rounded-xl bg-neutral-900/60 p-3 text-sm sm:mb-3 sm:space-y-2 sm:p-4">
         {messages.length === 0 && (
-          <div className="rounded-lg border border-neutral-800/80 bg-neutral-900/80 p-3 text-xs text-neutral-400">
+          <div className="rounded-lg border border-neutral-800/80 bg-neutral-900/80 p-4 text-xs text-neutral-400 sm:p-3 sm:text-sm">
             💡 Example questions:
-            <ul className="mt-1 list-disc space-y-1 pl-4">
+            <ul className="mt-2 list-disc space-y-1.5 pl-5 sm:mt-1 sm:space-y-1 sm:pl-4">
               <li>&quot;How is my agent performing today?&quot;</li>
               <li>&quot;Explain my current PnL risk.&quot;</li>
               <li>&quot;What should I watch from this portfolio?&quot;</li>
@@ -411,7 +413,7 @@ Number of positions: ${(pnl || []).length}.`;
             }`}
           >
             <div
-              className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-xs md:text-sm ${
+              className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-relaxed sm:max-w-[80%] sm:px-3 sm:py-2 sm:text-sm ${
                 m.role === "user"
                   ? "bg-sky-500 text-black"
                   : "bg-neutral-800/90 text-neutral-100"
@@ -429,10 +431,11 @@ Number of positions: ${(pnl || []).length}.`;
         </div>
       )}
 
+      {/* Mobile-optimized trade confirmation */}
       {pendingTrade && (
-        <div className="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20">
+        <div className="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 sm:mb-3 sm:p-4">
+          <div className="mb-3 flex items-center gap-2.5 sm:gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500/20 sm:h-8 sm:w-8">
               <svg
                 className="h-5 w-5 text-amber-400"
                 fill="none"
@@ -448,15 +451,15 @@ Number of positions: ${(pnl || []).length}.`;
               </svg>
             </div>
             <div>
-              <p className="text-sm font-semibold text-amber-200">
+              <p className="text-sm font-semibold text-amber-200 sm:text-base">
                 Trade Confirmation Required
               </p>
-              <p className="text-xs text-amber-300/80">
+              <p className="text-xs text-amber-300/80 sm:text-xs">
                 Review the details before executing
               </p>
             </div>
           </div>
-          <div className="mb-3 space-y-1.5 rounded-lg bg-neutral-900/60 p-3 text-xs">
+          <div className="mb-3 space-y-2 rounded-lg bg-neutral-900/60 p-3.5 text-xs sm:space-y-1.5 sm:p-3 sm:text-sm">
             <div className="flex justify-between">
               <span className="text-neutral-400">From:</span>
               <span className="font-semibold text-neutral-100">
@@ -476,11 +479,11 @@ Number of positions: ${(pnl || []).length}.`;
               </div>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2.5 sm:gap-2">
             <button
               onClick={() => handleExecuteTrade(pendingTrade)}
               disabled={loading}
-              className="flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-black transition-all hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex-1 rounded-lg bg-emerald-500 px-4 py-3 text-xs font-semibold text-black transition-all active:scale-95 hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2 sm:text-sm"
             >
               ✓ Confirm & Execute
             </button>
@@ -496,7 +499,7 @@ Number of positions: ${(pnl || []).length}.`;
                 ]);
               }}
               disabled={loading}
-              className="flex-1 rounded-lg bg-neutral-700 px-4 py-2 text-xs font-semibold text-neutral-100 transition-all hover:bg-neutral-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex-1 rounded-lg bg-neutral-700 px-4 py-3 text-xs font-semibold text-neutral-100 transition-all active:scale-95 hover:bg-neutral-600 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2 sm:text-sm"
             >
               ✗ Cancel
             </button>
@@ -504,21 +507,22 @@ Number of positions: ${(pnl || []).length}.`;
         </div>
       )}
 
-      <form onSubmit={handleSend} className="mt-1 flex items-center gap-2">
+      {/* Mobile-optimized input area */}
+      <form onSubmit={handleSend} className="mt-1 flex items-center gap-2 sm:gap-2.5">
         <input
           type="text"
           placeholder="Ask something about your agent..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={loading}
-          className="flex-1 rounded-lg border border-neutral-700/70 bg-neutral-900/80 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 outline-none transition-all duration-200 focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/20 disabled:cursor-not-allowed disabled:opacity-70"
+          className="flex-1 rounded-lg border border-neutral-700/70 bg-neutral-900/80 px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-600 outline-none transition-all duration-200 focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/20 disabled:cursor-not-allowed disabled:opacity-70 sm:px-3 sm:py-2"
         />
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          className="rounded-lg bg-gradient-to-r from-sky-500 to-emerald-500 px-4 py-2 text-xs font-semibold text-black shadow-lg shadow-sky-500/40 transition-all hover:shadow-sky-500/60 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
+          className="rounded-lg bg-gradient-to-r from-sky-500 to-emerald-500 px-5 py-3 text-xs font-semibold text-black shadow-lg shadow-sky-500/40 transition-all active:scale-95 hover:shadow-sky-500/60 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none sm:px-4 sm:py-2 sm:text-sm"
         >
-          {loading ? "Thinking..." : "Send"}
+          {loading ? "..." : "Send"}
         </button>
       </form>
     </div>
