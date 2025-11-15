@@ -1,5 +1,5 @@
 // src/components/chatbot/ChatbotPanel.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { executeTrade } from "../../api/backend";
 import { showSuccess, showError } from "../../utils/toast";
 import { validateTradeBalance } from "../../hooks/useTrade";
@@ -24,6 +24,7 @@ export default function ChatbotPanel({
   const [pendingTrade, setPendingTrade] = useState(null);
 
   const hasKey = !!openaiKey;
+  const messagesEndRef = useRef(null);
 
   // Load conversation history from localStorage
   useEffect(() => {
@@ -43,6 +44,11 @@ export default function ChatbotPanel({
     if (messages.length > 0) {
       localStorage.setItem("chatbot_history", JSON.stringify(messages));
     }
+  }, [messages]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const contextSummary = (() => {
@@ -258,6 +264,7 @@ Number of positions: ${(pnl || []).length}.`;
                 content: priceMessage.trim(),
               },
             ]);
+            showSuccess("💬 Bot replied!");
           } catch (error) {
             setMessages([
               ...newMessages,
@@ -303,6 +310,7 @@ Number of positions: ${(pnl || []).length}.`;
           choice?.message?.content ||
           "I couldn't generate a response. Please try again.";
         setMessages([...newMessages, { role: "assistant", content: reply }]);
+        showSuccess("💬 Bot replied!");
       }
     } catch (err) {
       console.error(err);
@@ -435,6 +443,8 @@ Number of positions: ${(pnl || []).length}.`;
             </div>
           </div>
         ))}
+        {/* Scroll anchor */}
+        <div ref={messagesEndRef} />
       </div>
 
       {error && (
