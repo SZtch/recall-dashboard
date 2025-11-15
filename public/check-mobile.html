@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Responsive Check</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white p-4">
+  <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4">
+    Responsive Test
+  </h1>
+  
+  <div class="space-y-4">
+    <div class="bg-neutral-900 p-4 rounded-lg">
+      <p class="text-xs sm:text-sm md:text-base">Current breakpoint:</p>
+      <div class="mt-2 space-y-2">
+        <div class="block sm:hidden text-emerald-400">📱 Mobile (&lt;640px)</div>
+        <div class="hidden sm:block md:hidden text-sky-400">📱 Small (640px-768px)</div>
+        <div class="hidden md:block lg:hidden text-purple-400">💻 Medium (768px-1024px)</div>
+        <div class="hidden lg:block xl:hidden text-amber-400">🖥️ Large (1024px-1280px)</div>
+        <div class="hidden xl:block text-rose-400">🖥️ XL (1280px+)</div>
+      </div>
+    </div>
+
+    <button class="w-full px-4 py-3 sm:px-3.5 sm:py-2.5 bg-emerald-500 text-black rounded-lg font-bold active:scale-95 transition-all">
+      Touch Me! (py-3 mobile, py-2.5 desktop)
+    </button>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-neutral-800 p-4 rounded-lg">Column 1</div>
+      <div class="bg-neutral-800 p-4 rounded-lg">Column 2</div>
+    </div>
+  </div>
+
+  <div class="mt-8 text-xs text-neutral-500">
+    <p>Window width: <span id="width"></span>px</p>
+    <p>If responsive is working, you'll see different text above based on screen size</p>
+  </div>
+
+  <script>
+    function updateWidth() {
+      document.getElementById('width').textContent = window.innerWidth;
+    }
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+  </script>
+</body>
+</html>
