@@ -1,5 +1,5 @@
 // src/components/chatbot/ChatbotPanel.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { executeTrade } from "../../api/backend";
 import { showSuccess, showError } from "../../utils/toast";
 import { validateTradeBalance } from "../../hooks/useTrade";
@@ -14,6 +14,7 @@ export default function ChatbotPanel({
   agentName,
   apiKey,
   onExecuteTrade,
+  onClose,
 }) {
   const [tempKey, setTempKey] = useState("");
   const [messages, setMessages] = useState([]);
@@ -23,6 +24,7 @@ export default function ChatbotPanel({
   const [pendingTrade, setPendingTrade] = useState(null);
 
   const hasKey = !!openaiKey;
+  const messagesEndRef = useRef(null);
 
   // Load conversation history from localStorage
   useEffect(() => {
@@ -42,6 +44,11 @@ export default function ChatbotPanel({
     if (messages.length > 0) {
       localStorage.setItem("chatbot_history", JSON.stringify(messages));
     }
+  }, [messages]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const contextSummary = (() => {
@@ -257,6 +264,7 @@ Number of positions: ${(pnl || []).length}.`;
                 content: priceMessage.trim(),
               },
             ]);
+            showSuccess("💬 Bot replied!");
           } catch (error) {
             setMessages([
               ...newMessages,
@@ -302,6 +310,7 @@ Number of positions: ${(pnl || []).length}.`;
           choice?.message?.content ||
           "I couldn't generate a response. Please try again.";
         setMessages([...newMessages, { role: "assistant", content: reply }]);
+        showSuccess("💬 Bot replied!");
       }
     } catch (err) {
       console.error(err);
@@ -388,6 +397,17 @@ Number of positions: ${(pnl || []).length}.`;
           <span className="rounded-full bg-emerald-500/10 px-3 py-1.5 text-[10px] font-medium text-emerald-300 sm:px-3 sm:py-1 sm:text-[11px]">
             OpenAI Connected
           </span>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="text-neutral-400 transition-colors hover:text-white"
+              aria-label="Close"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -423,6 +443,8 @@ Number of positions: ${(pnl || []).length}.`;
             </div>
           </div>
         ))}
+        {/* Scroll anchor */}
+        <div ref={messagesEndRef} />
       </div>
 
       {error && (

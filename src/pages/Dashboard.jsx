@@ -7,9 +7,12 @@ import OptimismIcon from "../assets/chains/optimism.svg";
 import ArbitrumIcon from "../assets/chains/arbitrum.svg";
 import BscIcon from "../assets/chains/bsc.svg";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import ApiKeyForm from "../components/ApiKeyForm";
 import PnlChart from "../components/PnlChart";
 import ChatbotPanel from "../components/chatbot/ChatbotPanel";
+import VerifyWalletPanel from "../components/VerifyWalletPanel";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 import {
   getBalances,
   getHistory,
@@ -1114,6 +1117,8 @@ function SellPanel({ apiKey, env, onAfterTrade }) {
 // ======================= MAIN DASHBOARD =====================
 
 export default function Dashboard() {
+  const { t } = useTranslation();
+
   const [agentName, setAgentName] = useState(null);
   const [apiKey, setApiKey] = useState(null);
   const [env, setEnv] = useState("sandbox");
@@ -1126,6 +1131,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("balances");
 
   const [openaiKey, setOpenaiKey] = useState(null);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
 
   const isConnected = !!(agentName && apiKey);
 
@@ -1323,6 +1329,7 @@ export default function Dashboard() {
 
             {/* Touch-friendly action buttons */}
             <div className="flex w-full items-center gap-2 sm:gap-3 md:w-auto">
+              <LanguageSwitcher />
               <a
                 href="https://app.recall.network/competitions"
                 target="_blank"
@@ -1332,13 +1339,13 @@ export default function Dashboard() {
                 <svg className="h-3.5 w-3.5 sm:h-3 sm:w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
-                Leaderboard
+                {t('header.leaderboard')}
               </a>
               <button
                 onClick={logout}
                 className="flex-1 rounded-lg border border-neutral-700/70 bg-neutral-900/50 px-4 py-2.5 text-xs font-medium uppercase tracking-[0.12em] text-neutral-200 transition-all active:scale-95 hover:border-rose-500/80 hover:bg-neutral-900/80 hover:text-rose-300 sm:py-2.5 md:flex-none md:px-5 md:text-[11px]"
               >
-                Logout
+                {t('header.logout')}
               </button>
             </div>
           </header>
@@ -1387,7 +1394,7 @@ export default function Dashboard() {
                       : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
                   }`}
                 >
-                  Balances
+                  {t('tabs.balances')}
                 </button>
                 <button
                   onClick={() => setActiveTab("history")}
@@ -1397,7 +1404,7 @@ export default function Dashboard() {
                       : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
                   }`}
                 >
-                  History
+                  {t('tabs.history')}
                 </button>
                 <button
                   onClick={() => setActiveTab("pnl")}
@@ -1407,7 +1414,7 @@ export default function Dashboard() {
                       : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
                   }`}
                 >
-                  PNL
+                  {t('tabs.pnl')}
                 </button>
                 <button
                   onClick={() => setActiveTab("buy")}
@@ -1417,7 +1424,7 @@ export default function Dashboard() {
                       : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
                   }`}
                 >
-                  Buy
+                  {t('tabs.buy')}
                 </button>
                 <button
                   onClick={() => setActiveTab("sell")}
@@ -1427,17 +1434,17 @@ export default function Dashboard() {
                       : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
                   }`}
                 >
-                  Sell
+                  {t('tabs.sell')}
                 </button>
                 <button
-                  onClick={() => setActiveTab("chatbot")}
+                  onClick={() => setActiveTab("verify")}
                   className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
-                    activeTab === "chatbot"
-                      ? "bg-purple-500 text-white shadow-lg shadow-purple-500/30"
+                    activeTab === "verify"
+                      ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
                       : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
                   }`}
                 >
-                  Chatbot
+                  {t('tabs.verify')}
                 </button>
               </div>
             </div>
@@ -1646,21 +1653,64 @@ export default function Dashboard() {
                 <SellPanel apiKey={apiKey} env={env} onAfterTrade={refreshData} />
               )}
 
-              {activeTab === "chatbot" && (
-                <ChatbotPanel
-                  openaiKey={openaiKey}
-                  onSaveKey={saveOpenAIKey}
-                  balances={balanceRows}
-                  pnl={pnlData}
-                  env={env}
-                  agentName={agentName}
-                  apiKey={apiKey}
-                  onExecuteTrade={refreshData}
-                />
+              {activeTab === "verify" && (
+                <div className="mx-auto max-w-2xl">
+                  <VerifyWalletPanel apiKey={apiKey} />
+                </div>
               )}
             </div>
           </section>
         </main>
+      )}
+
+      {/* Floating Chat Agent - Bottom Right */}
+      {isConnected && (
+        <>
+          {/* Chatbot Panel */}
+          {chatbotOpen && (
+            <div className="fixed bottom-20 right-4 z-50 h-[500px] w-[380px] sm:bottom-24 sm:right-6 sm:w-[420px]">
+              <ChatbotPanel
+                openaiKey={openaiKey}
+                onSaveKey={saveOpenAIKey}
+                balances={balanceRows}
+                pnl={pnlData}
+                env={env}
+                agentName={agentName}
+                apiKey={apiKey}
+                onExecuteTrade={refreshData}
+                onClose={() => setChatbotOpen(false)}
+              />
+            </div>
+          )}
+
+          {/* Chat Agent Button */}
+          <button
+            onClick={() => setChatbotOpen(!chatbotOpen)}
+            className={`group fixed bottom-4 right-4 z-50 flex h-12 items-center gap-2 rounded-full border px-4 shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-105 active:scale-95 sm:bottom-6 sm:right-6 sm:h-14 sm:px-5 ${
+              chatbotOpen
+                ? "border-purple-500/50 bg-purple-500/20 text-purple-300"
+                : "border-neutral-700/50 bg-neutral-900/80 text-neutral-300 hover:border-purple-400/50 hover:bg-neutral-800/90"
+            }`}
+            aria-label="Toggle Chat Agent"
+          >
+            <svg
+              className={`h-5 w-5 transition-colors sm:h-5 sm:w-5 ${
+                chatbotOpen ? "text-purple-400" : "text-neutral-400 group-hover:text-purple-400"
+              }`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+            <span className="text-sm font-semibold">{t('chatbot.chatAgent')}</span>
+          </button>
+        </>
       )}
     </div>
   );
