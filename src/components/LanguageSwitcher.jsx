@@ -48,30 +48,23 @@ export default function LanguageSwitcher() {
           />
 
           {/* Dropdown */}
-          <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-lg border border-neutral-700/50 bg-neutral-900/95 shadow-xl backdrop-blur-sm">
-            {LANGUAGES.map((lang) => (
-              <button
-                key={lang.code}
-                onClick={() => changeLanguage(lang.code)}
-                className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors first:rounded-t-lg last:rounded-b-lg hover:bg-neutral-800/80 ${
-                  i18n.language === lang.code
-                    ? "bg-emerald-500/10 text-emerald-400"
-                    : "text-neutral-300"
-                }`}
-              >
-                <span className="text-xl">{lang.flag}</span>
-                <span className="flex-1 font-medium">{lang.name}</span>
-                {i18n.language === lang.code && (
-                  <svg className="h-4 w-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                )}
-              </button>
-            ))}
+          <div className="absolute right-0 top-full z-50 mt-2 rounded-lg border border-neutral-700/50 bg-neutral-900/95 shadow-xl backdrop-blur-sm">
+            <div className="flex flex-col gap-1 p-2">
+              {LANGUAGES.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => changeLanguage(lang.code)}
+                  className={`flex items-center justify-center rounded-lg px-4 py-2 text-2xl transition-all hover:bg-neutral-800/80 ${
+                    i18n.language === lang.code
+                      ? "bg-emerald-500/20 ring-2 ring-emerald-500/50"
+                      : "bg-neutral-800/40"
+                  }`}
+                  title={lang.name}
+                >
+                  {lang.flag}
+                </button>
+              ))}
+            </div>
           </div>
         </>
       )}
