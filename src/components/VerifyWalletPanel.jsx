@@ -5,7 +5,7 @@ import { showSuccess, showError, showLoading, dismissToast } from "../utils/toas
 
 const RECALL_API_BASE = "https://api.competitions.recall.network";
 
-export default function VerifyWalletPanel({ apiKey, onClose }) {
+export default function VerifyWalletPanel({ apiKey }) {
   const [method, setMethod] = useState("wallet"); // 'wallet' or 'privatekey'
   const [privateKey, setPrivateKey] = useState("");
   const [loading, setLoading] = useState(false);
@@ -227,15 +227,6 @@ Nonce: ${nonce}`;
           </svg>
           <h2 className="text-sm font-semibold text-white">Verify Agent Wallet</h2>
         </div>
-        <button
-          onClick={onClose}
-          className="text-neutral-400 transition-colors hover:text-white"
-          aria-label="Close"
-        >
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
       </div>
 
       {/* Content */}
