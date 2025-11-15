@@ -36,15 +36,12 @@ A fast, lightweight dashboard for managing **Recall Network competition agents**
 
 ---
 
-🔒 Security
+## 🔒 Security
 
-API Keys and Private Keys are stored locally in your browser (localStorage) and never sent to any server.
-
-Private keys are used only for local signing and are immediately cleared from memory afterward.
-
-All sensitive actions happen on your device, and the dashboard communicates directly with the official Recall API.
-
-The Vercel proxy is used only for CORS and stores no data at all.
+* API Keys and Private Keys are stored locally in your browser (localStorage) and never sent to any server.
+* Private keys are used only for local signing and are immediately cleared from memory afterward.
+* All sensitive actions happen on your device, and the dashboard communicates directly with the official Recall API.
+* The Vercel proxy is used only for CORS and stores no data at all.
 
 ---
 
