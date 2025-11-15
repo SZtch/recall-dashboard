@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { executeTrade } from "../../api/backend";
 import { showSuccess, showError } from "../../utils/toast";
 import { validateTradeBalance } from "../../hooks/useTrade";
+import { getMultipleCryptoPrices, formatPrice, formatChange, formatMarketCap } from "../../api/crypto";
 
 export default function ChatbotPanel({
   openaiKey,
@@ -142,7 +143,7 @@ Number of positions: ${(pnl || []).length}.`;
             {
               role: "system",
               content:
-                "You are an assistant helping a user manage their Recall trading agent. You can execute trades when requested. Be concise and practical. When executing trades, always confirm the details clearly.",
+                "You are an assistant helping a user manage their Recall trading agent. You have two main capabilities: 1) Execute trades when requested, 2) Get real-time cryptocurrency prices and market data. Be concise and practical. When executing trades, always confirm the details clearly. When asked about crypto prices, fetch real-time data.",
             },
             {
               role: "system",
@@ -183,6 +184,28 @@ Number of positions: ${(pnl || []).length}.`;
                 },
               },
             },
+            {
+              type: "function",
+              function: {
+                name: "get_crypto_price",
+                description:
+                  "Get real-time cryptocurrency price information. Use this when the user asks about crypto prices, market data, or wants to compare coins.",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    symbols: {
+                      type: "array",
+                      items: {
+                        type: "string",
+                      },
+                      description:
+                        "Array of cryptocurrency symbols (e.g., ['BTC', 'ETH', 'SOL']). Supports: BTC, ETH, SOL, USDC, USDT, BNB, ADA, DOT, MATIC, AVAX, LINK, UNI, ATOM, XRP, DOGE, SHIB, ARB, OP, and more.",
+                    },
+                  },
+                  required: ["symbols"],
+                },
+              },
+            },
           ],
           tool_choice: "auto",
         }),
@@ -201,7 +224,49 @@ Number of positions: ${(pnl || []).length}.`;
       // Check if AI wants to call a function
       if (choice?.message?.tool_calls && choice.message.tool_calls.length > 0) {
         const toolCall = choice.message.tool_calls[0];
-        if (toolCall.function.name === "execute_trade") {
+
+        if (toolCall.function.name === "get_crypto_price") {
+          // Handle crypto price request
+          const params = JSON.parse(toolCall.function.arguments);
+          const symbols = params.symbols || [];
+
+          try {
+            const pricesData = await getMultipleCryptoPrices(symbols);
+
+            // Format price response
+            let priceMessage = "📈 **Cryptocurrency Prices**\n\n";
+
+            pricesData.forEach((coin) => {
+              if (coin.error) {
+                priceMessage += `❌ ${coin.symbol}: Not found\n\n`;
+              } else {
+                const changeIcon = coin.change24h >= 0 ? "📈" : "📉";
+                const changeColor = coin.change24h >= 0 ? "+" : "";
+
+                priceMessage += `🪙 **${coin.symbol}**\n`;
+                priceMessage += `• Price: ${formatPrice(coin.price)}\n`;
+                priceMessage += `• 24h Change: ${changeColor}${formatChange(coin.change24h)} ${changeIcon}\n`;
+                priceMessage += `• Market Cap: ${formatMarketCap(coin.marketCap)}\n\n`;
+              }
+            });
+
+            setMessages([
+              ...newMessages,
+              {
+                role: "assistant",
+                content: priceMessage.trim(),
+              },
+            ]);
+          } catch (error) {
+            setMessages([
+              ...newMessages,
+              {
+                role: "assistant",
+                content: `❌ Failed to fetch crypto prices: ${error.message}`,
+              },
+            ]);
+          }
+        } else if (toolCall.function.name === "execute_trade") {
           const tradeParams = JSON.parse(toolCall.function.arguments);
 
           // Validate balance immediately
