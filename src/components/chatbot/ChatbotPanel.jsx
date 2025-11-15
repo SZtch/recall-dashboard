@@ -14,6 +14,7 @@ export default function ChatbotPanel({
   agentName,
   apiKey,
   onExecuteTrade,
+  onClose,
 }) {
   const [tempKey, setTempKey] = useState("");
   const [messages, setMessages] = useState([]);
@@ -388,6 +389,17 @@ Number of positions: ${(pnl || []).length}.`;
           <span className="rounded-full bg-emerald-500/10 px-3 py-1.5 text-[10px] font-medium text-emerald-300 sm:px-3 sm:py-1 sm:text-[11px]">
             OpenAI Connected
           </span>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="text-neutral-400 transition-colors hover:text-white"
+              aria-label="Close"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
