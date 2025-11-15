@@ -33,6 +33,17 @@ async function fetchWithProxy(url, options = {}) {
   if (isProduction()) {
     const proxyUrl = '/api/proxy';
 
+    // Parse body if it's a JSON string
+    let parsedBody;
+    if (options.body) {
+      try {
+        parsedBody = typeof options.body === 'string' ? JSON.parse(options.body) : options.body;
+      } catch (e) {
+        console.error('Failed to parse request body:', e);
+        parsedBody = undefined;
+      }
+    }
+
     const response = await fetch(proxyUrl, {
       method: 'POST',
       headers: {
@@ -42,13 +53,20 @@ async function fetchWithProxy(url, options = {}) {
         url,
         method: options.method || 'GET',
         headers: options.headers || {},
-        body: options.body ? JSON.parse(options.body) : undefined,
+        body: parsedBody,
       }),
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.message || `Proxy request failed: ${response.status}`);
+      // Try to parse error response, fallback to text if not JSON
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        const text = await response.text();
+        errorData = { message: `Non-JSON error response: ${text.substring(0, 200)}` };
+      }
+      throw new Error(errorData.message || errorData.error || `Proxy request failed: ${response.status}`);
     }
 
     // Return a response-like object
