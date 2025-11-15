@@ -1271,6 +1271,23 @@ export default function Dashboard() {
               </div>
             </div>
           </main>
+
+          {/* Fixed X (Twitter) Link - Bottom Right */}
+          <a
+            href="https://x.com/sztch"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group fixed bottom-4 right-4 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-neutral-700/50 bg-neutral-900/80 shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:border-sky-400/50 hover:bg-neutral-800/90 hover:shadow-sky-500/30 active:scale-95 sm:bottom-6 sm:right-6 sm:h-12 sm:w-12"
+            aria-label="Follow on X"
+          >
+            <svg
+              className="h-5 w-5 text-white transition-colors group-hover:text-sky-400 sm:h-5 sm:w-5"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+          </a>
         </div>
       )}
 
@@ -1645,23 +1662,6 @@ export default function Dashboard() {
           </section>
         </main>
       )}
-
-      {/* Fixed X (Twitter) Link - Bottom Right */}
-      <a
-        href="https://x.com/sztch"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group fixed bottom-4 right-4 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-neutral-700/50 bg-neutral-900/80 shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:border-sky-400/50 hover:bg-neutral-800/90 hover:shadow-sky-500/30 active:scale-95 sm:bottom-6 sm:right-6 sm:h-12 sm:w-12"
-        aria-label="Follow on X"
-      >
-        <svg
-          className="h-5 w-5 text-white transition-colors group-hover:text-sky-400 sm:h-5 sm:w-5"
-          fill="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-        </svg>
-      </a>
     </div>
   );
 }
