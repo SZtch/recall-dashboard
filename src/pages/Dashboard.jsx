@@ -1336,6 +1336,17 @@ export default function Dashboard() {
               >
                 Refresh
               </button>
+              <a
+                href="https://app.recall.network/competitions"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-sky-500/50 bg-sky-500/10 px-4 py-2.5 text-xs font-medium uppercase tracking-[0.12em] text-sky-300 transition-all active:scale-95 hover:border-sky-400 hover:bg-sky-500/20 hover:text-sky-200 sm:py-2.5 md:flex-none md:px-5 md:text-[11px]"
+              >
+                <svg className="h-3.5 w-3.5 sm:h-3 sm:w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+                Leaderboard
+              </a>
               <button
                 onClick={logout}
                 className="flex-1 rounded-lg border border-neutral-700/70 bg-neutral-900/50 px-4 py-2.5 text-xs font-medium uppercase tracking-[0.12em] text-neutral-200 transition-all active:scale-95 hover:border-rose-500/80 hover:bg-neutral-900/80 hover:text-rose-300 sm:py-2.5 md:flex-none md:px-5 md:text-[11px]"
