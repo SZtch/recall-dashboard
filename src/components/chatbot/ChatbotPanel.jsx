@@ -373,29 +373,29 @@ Number of positions: ${(pnl || []).length}.`;
   }
 
   return (
-    <div className="mx-auto flex min-h-[500px] max-h-[calc(100vh-200px)] max-w-3xl flex-col rounded-xl border border-neutral-800/60 bg-neutral-950/95 p-4 shadow-xl sm:h-[550px] sm:rounded-2xl sm:p-5 md:h-[600px]">
-      {/* Mobile-optimized header */}
-      <div className="mb-4 flex flex-col gap-3 sm:mb-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="glass-card mx-auto flex min-h-[500px] max-h-[calc(100vh-200px)] max-w-3xl flex-col rounded-2xl shadow-emerald p-4 sm:h-[550px] sm:rounded-3xl sm:p-5 md:h-[600px] animate-scale-in">
+      {/* Enhanced header */}
+      <div className="mb-4 flex flex-col gap-3 border-b border-neutral-800/50 pb-4 sm:mb-3 sm:flex-row sm:items-center sm:justify-between sm:pb-3">
         <div className="flex-1">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-400 sm:text-sm">
-            Chatbot
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-gradient-emerald sm:text-sm">
+            AI Assistant
           </p>
-          <p className="mt-0.5 text-xs leading-relaxed text-neutral-500 sm:text-[11px]">
-            Ask anything about your agent&apos;s performance, balances, or
-            strategy ideas.
+          <p className="mt-0.5 text-xs leading-relaxed text-neutral-400 sm:text-[11px]">
+            Your trading companion with real-time insights
           </p>
         </div>
         <div className="flex items-center gap-2 sm:gap-2.5">
           {messages.length > 0 && (
             <button
               onClick={clearHistory}
-              className="rounded-lg bg-neutral-800/80 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 transition-all active:scale-95 hover:bg-neutral-700 hover:text-neutral-200 sm:px-2.5 sm:py-1.5 sm:text-[11px]"
+              className="ripple rounded-lg glass px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400 transition-all active:scale-95 hover:bg-neutral-800/80 hover:text-neutral-200 sm:px-2.5 sm:py-1.5 sm:text-[11px]"
             >
               Clear
             </button>
           )}
-          <span className="rounded-full bg-emerald-500/10 px-3 py-1.5 text-[10px] font-medium text-emerald-300 sm:px-3 sm:py-1 sm:text-[11px]">
-            OpenAI Connected
+          <span className="rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/30 px-3 py-1.5 text-[10px] font-medium text-emerald-300 animate-pulse-slow sm:px-3 sm:py-1 sm:text-[11px]">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 mr-1.5 animate-ping"></span>
+            Connected
           </span>
           {onClose && (
             <button
@@ -411,16 +411,19 @@ Number of positions: ${(pnl || []).length}.`;
         </div>
       </div>
 
-      {/* Mobile-optimized message area */}
-      <div className="mb-3 flex-1 space-y-2.5 overflow-y-auto rounded-xl bg-neutral-900/60 p-3 text-sm sm:mb-3 sm:space-y-2 sm:p-4">
+      {/* Enhanced message area */}
+      <div className="mb-3 flex-1 space-y-3 overflow-y-auto rounded-2xl glass p-3 text-sm sm:mb-3 sm:space-y-2.5 sm:p-4">
         {messages.length === 0 && (
-          <div className="rounded-lg border border-neutral-800/80 bg-neutral-900/80 p-4 text-xs text-neutral-400 sm:p-3 sm:text-sm">
-            💡 Example questions:
-            <ul className="mt-2 list-disc space-y-1.5 pl-5 sm:mt-1 sm:space-y-1 sm:pl-4">
-              <li>&quot;How is my agent performing today?&quot;</li>
-              <li>&quot;Explain my current PnL risk.&quot;</li>
-              <li>&quot;What should I watch from this portfolio?&quot;</li>
-              <li>&quot;Buy 10 USDC worth of SOL&quot;</li>
+          <div className="glass-panel rounded-xl p-4 text-xs text-neutral-300 animate-fade-in sm:p-3 sm:text-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">💡</span>
+              <span className="font-semibold text-emerald-400">Try asking:</span>
+            </div>
+            <ul className="mt-2 space-y-2 pl-7 sm:mt-1 sm:space-y-1.5 sm:pl-6">
+              <li className="relative before:absolute before:left-[-1rem] before:content-['→'] before:text-emerald-400">&quot;How is my agent performing today?&quot;</li>
+              <li className="relative before:absolute before:left-[-1rem] before:content-['→'] before:text-emerald-400">&quot;Explain my current PnL risk.&quot;</li>
+              <li className="relative before:absolute before:left-[-1rem] before:content-['→'] before:text-emerald-400">&quot;What should I watch from this portfolio?&quot;</li>
+              <li className="relative before:absolute before:left-[-1rem] before:content-['→'] before:text-emerald-400">&quot;Buy 10 USDC worth of SOL&quot;</li>
             </ul>
           </div>
         )}
@@ -430,13 +433,13 @@ Number of positions: ${(pnl || []).length}.`;
             key={idx}
             className={`flex ${
               m.role === "user" ? "justify-end" : "justify-start"
-            }`}
+            } animate-slide-up`}
           >
             <div
-              className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-relaxed sm:max-w-[80%] sm:px-3 sm:py-2 sm:text-sm ${
+              className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-lg sm:max-w-[80%] sm:px-3 sm:py-2 sm:text-sm transition-all hover:scale-102 ${
                 m.role === "user"
-                  ? "bg-sky-500 text-black"
-                  : "bg-neutral-800/90 text-neutral-100"
+                  ? "bg-gradient-to-br from-emerald-500 to-primary-600 text-white font-medium shadow-emerald"
+                  : "glass-panel text-neutral-100 shadow-neutral-900/50"
               }`}
             >
               {m.content}
@@ -453,9 +456,9 @@ Number of positions: ${(pnl || []).length}.`;
         </div>
       )}
 
-      {/* Mobile-optimized trade confirmation */}
+      {/* Enhanced trade confirmation */}
       {pendingTrade && (
-        <div className="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 sm:mb-3 sm:p-4">
+        <div className="mb-3 rounded-xl gradient-border-animated p-4 sm:mb-3 sm:p-4 animate-scale-in shadow-glow">
           <div className="mb-3 flex items-center gap-2.5 sm:gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500/20 sm:h-8 sm:w-8">
               <svg
@@ -505,7 +508,7 @@ Number of positions: ${(pnl || []).length}.`;
             <button
               onClick={() => handleExecuteTrade(pendingTrade)}
               disabled={loading}
-              className="flex-1 rounded-lg bg-emerald-500 px-4 py-3 text-xs font-semibold text-black transition-all active:scale-95 hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2 sm:text-sm"
+              className="ripple flex-1 rounded-lg bg-gradient-to-r from-emerald-500 to-primary-600 px-4 py-3 text-xs font-bold text-white shadow-emerald transition-all active:scale-95 hover:shadow-emerald-lg hover:scale-102 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2 sm:text-sm"
             >
               ✓ Confirm & Execute
             </button>
@@ -521,7 +524,7 @@ Number of positions: ${(pnl || []).length}.`;
                 ]);
               }}
               disabled={loading}
-              className="flex-1 rounded-lg bg-neutral-700 px-4 py-3 text-xs font-semibold text-neutral-100 transition-all active:scale-95 hover:bg-neutral-600 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2 sm:text-sm"
+              className="ripple flex-1 rounded-lg glass px-4 py-3 text-xs font-semibold text-neutral-100 transition-all active:scale-95 hover:bg-neutral-700/80 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2 sm:text-sm"
             >
               ✗ Cancel
             </button>
@@ -529,22 +532,27 @@ Number of positions: ${(pnl || []).length}.`;
         </div>
       )}
 
-      {/* Mobile-optimized input area */}
+      {/* Enhanced input area */}
       <form onSubmit={handleSend} className="mt-1 flex items-center gap-2 sm:gap-2.5">
         <input
           type="text"
-          placeholder="Ask something about your agent..."
+          placeholder="Ask anything..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={loading}
-          className="flex-1 rounded-lg border border-neutral-700/70 bg-neutral-900/80 px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-600 outline-none transition-all duration-200 focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/20 disabled:cursor-not-allowed disabled:opacity-70 sm:px-3 sm:py-2"
+          className="glass flex-1 rounded-xl px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-500 outline-none transition-all duration-200 focus:ring-2 focus:ring-emerald-500/30 focus:shadow-glow disabled:cursor-not-allowed disabled:opacity-70 sm:px-3 sm:py-2"
         />
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          className="rounded-lg bg-gradient-to-r from-sky-500 to-emerald-500 px-5 py-3 text-xs font-semibold text-black shadow-lg shadow-sky-500/40 transition-all active:scale-95 hover:shadow-sky-500/60 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none sm:px-4 sm:py-2 sm:text-sm"
+          className="ripple rounded-xl bg-gradient-to-r from-emerald-500 to-primary-600 px-5 py-3 text-xs font-bold text-white shadow-emerald transition-all ease-bounce-in active:scale-95 hover:shadow-glow hover:scale-102 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none sm:px-4 sm:py-2 sm:text-sm"
         >
-          {loading ? "..." : "Send"}
+          {loading ? (
+            <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+            </svg>
+          ) : "Send"}
         </button>
       </form>
     </div>
