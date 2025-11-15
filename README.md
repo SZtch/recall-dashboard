@@ -47,24 +47,6 @@ http://localhost:5173
 
 ---
 
-## ⚙️ Optional: AI Chatbot
-
-Create `.env`:
-
-```env
-VITE_OPENAI_API_KEY=your_key_here
-```
-
----
-
-## 🏗 Build
-
-```bash
-npm run build
-```
-
----
-
 SZtch
 
 ---
