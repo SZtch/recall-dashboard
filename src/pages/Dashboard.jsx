@@ -1127,6 +1127,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("balances");
 
   const [openaiKey, setOpenaiKey] = useState(null);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
 
   const isConnected = !!(agentName && apiKey);
 
@@ -1440,16 +1441,6 @@ export default function Dashboard() {
                 >
                   Verify
                 </button>
-                <button
-                  onClick={() => setActiveTab("chatbot")}
-                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
-                    activeTab === "chatbot"
-                      ? "bg-purple-500 text-white shadow-lg shadow-purple-500/30"
-                      : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
-                  }`}
-                >
-                  Chatbot
-                </button>
               </div>
             </div>
 
@@ -1662,24 +1653,60 @@ export default function Dashboard() {
                   <VerifyWalletPanel apiKey={apiKey} />
                 </div>
               )}
-
-              {activeTab === "chatbot" && (
-                <ChatbotPanel
-                  openaiKey={openaiKey}
-                  onSaveKey={saveOpenAIKey}
-                  balances={balanceRows}
-                  pnl={pnlData}
-                  env={env}
-                  agentName={agentName}
-                  apiKey={apiKey}
-                  onExecuteTrade={refreshData}
-                />
-              )}
             </div>
           </section>
         </main>
       )}
 
+      {/* Floating Chat Agent - Bottom Right */}
+      {isConnected && (
+        <>
+          {/* Chatbot Panel */}
+          {chatbotOpen && (
+            <div className="fixed bottom-20 right-4 z-50 h-[500px] w-[380px] sm:bottom-24 sm:right-6 sm:w-[420px]">
+              <ChatbotPanel
+                openaiKey={openaiKey}
+                onSaveKey={saveOpenAIKey}
+                balances={balanceRows}
+                pnl={pnlData}
+                env={env}
+                agentName={agentName}
+                apiKey={apiKey}
+                onExecuteTrade={refreshData}
+                onClose={() => setChatbotOpen(false)}
+              />
+            </div>
+          )}
+
+          {/* Chat Agent Button */}
+          <button
+            onClick={() => setChatbotOpen(!chatbotOpen)}
+            className={`group fixed bottom-4 right-4 z-50 flex h-12 items-center gap-2 rounded-full border px-4 shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-105 active:scale-95 sm:bottom-6 sm:right-6 sm:h-14 sm:px-5 ${
+              chatbotOpen
+                ? "border-purple-500/50 bg-purple-500/20 text-purple-300"
+                : "border-neutral-700/50 bg-neutral-900/80 text-neutral-300 hover:border-purple-400/50 hover:bg-neutral-800/90"
+            }`}
+            aria-label="Toggle Chat Agent"
+          >
+            <svg
+              className={`h-5 w-5 transition-colors sm:h-5 sm:w-5 ${
+                chatbotOpen ? "text-purple-400" : "text-neutral-400 group-hover:text-purple-400"
+              }`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+            <span className="text-sm font-semibold">Chat Agent</span>
+          </button>
+        </>
+      )}
     </div>
   );
 }
