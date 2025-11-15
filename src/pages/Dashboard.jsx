@@ -9,7 +9,7 @@ import BscIcon from "../assets/chains/bsc.svg";
 import { useState, useEffect } from "react";
 import ApiKeyForm from "../components/ApiKeyForm";
 import PnlChart from "../components/PnlChart";
-import Chatbot from "../components/Chatbot.jsx";
+import ChatbotPanel from "../components/chatbot/ChatbotPanel";
 import {
   getBalances,
   getHistory,
@@ -17,6 +17,8 @@ import {
   executeTrade,
 } from "../api/backend";
 import RecallLogo from "../assets/recall-logo.png";
+import { showSuccess, showError, showLoading, dismissToast } from "../utils/toast";
+import { secureSet, secureGet, secureRemove } from "../utils/secureStorage";
 
 const CHAIN_OPTIONS = [
   { id: "solana", label: "Solana", icon: SolanaIcon },
@@ -192,8 +194,11 @@ function BuyPanel({ apiKey, env, onAfterTrade }) {
 
       if (mode === "single") {
         if (!buyToToken || !buyAmount) {
-          alert("Please fill token and amount first.");
+          showError("Please fill token and amount first.");
+          setLoading(false);
+          return;
         } else {
+          const toastId = showLoading("Executing buy trade...");
           await executeTrade(apiKey, env, {
             fromChainKey: fromChain,
             toChainKey: toChain,
@@ -202,14 +207,18 @@ function BuyPanel({ apiKey, env, onAfterTrade }) {
             amount: buyAmount,
             reason: buyReason || "BUY",
           });
-          alert("Single buy executed successfully!");
+          dismissToast(toastId);
+          showSuccess(`Buy executed! ${buyAmount} USDC → ${buyToToken}`);
         }
       } else if (mode === "batch") {
         const total = Number(batchTotal || 0);
         const step = Number(batchStep || 0);
         if (!batchToToken || !total || !step) {
-          alert("Please fill token, total USDC, and per trade.");
+          showError("Please fill token, total USDC, and per trade.");
+          setLoading(false);
+          return;
         } else {
+          const toastId = showLoading("Executing batch buy...");
           let spent = 0;
           while (spent + 1e-12 < total) {
             const amt = Math.min(step, total - spent);
@@ -223,12 +232,16 @@ function BuyPanel({ apiKey, env, onAfterTrade }) {
             });
             spent += amt;
           }
-          alert("Batch buy completed successfully!");
+          dismissToast(toastId);
+          showSuccess(`Batch buy completed! Total: ${total} USDC → ${batchToToken}`);
         }
       } else if (mode === "t2t") {
         if (!t2tFromToken || !t2tToToken || !t2tAmount) {
-          alert("Please fill all token and amount fields.");
+          showError("Please fill all token and amount fields.");
+          setLoading(false);
+          return;
         } else {
+          const toastId = showLoading("Executing token swap...");
           await executeTrade(apiKey, env, {
             fromChainKey: fromChain,
             toChainKey: toChain,
@@ -237,24 +250,25 @@ function BuyPanel({ apiKey, env, onAfterTrade }) {
             amount: t2tAmount,
             reason: t2tReason || "TOKEN TO TOKEN",
           });
-          alert("Token swap executed successfully!");
+          dismissToast(toastId);
+          showSuccess(`Token swap executed! ${t2tAmount} ${t2tFromToken} → ${t2tToToken}`);
         }
       }
 
       if (onAfterTrade) onAfterTrade();
     } catch (err) {
       console.error(err);
-      alert(`Trade failed: ${err.message}`);
+      showError(`Trade failed: ${err.message}`);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="mt-4 grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+    <div className="mt-4 grid grid-cols-1 gap-5 sm:gap-6 xl:grid-cols-[1.2fr_0.8fr]">
       <form
         onSubmit={handleSubmit}
-        className="group relative overflow-hidden rounded-2xl border border-neutral-800/60 bg-gradient-to-b from-neutral-950/95 via-neutral-950/90 to-black/95 p-6 shadow-xl backdrop-blur-xl transition-all duration-300 hover:border-emerald-500/30 hover:shadow-emerald-500/10"
+        className="group relative overflow-hidden rounded-xl border border-neutral-800/60 bg-gradient-to-b from-neutral-950/95 via-neutral-950/90 to-black/95 p-5 shadow-xl backdrop-blur-xl transition-all duration-300 hover:border-emerald-500/30 hover:shadow-emerald-500/10 sm:rounded-2xl sm:p-6"
       >
         {/* Top accent border */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent" />
@@ -286,12 +300,12 @@ function BuyPanel({ apiKey, env, onAfterTrade }) {
           </div>
         </div>
 
-        {/* Mode Switcher */}
-        <div className="mb-6 inline-flex w-full items-center gap-1.5 overflow-x-auto rounded-xl bg-neutral-900/60 p-1 text-[10px] font-bold uppercase tracking-[0.15em] md:w-auto">
+        {/* Mode Switcher - Touch-friendly */}
+        <div className="mb-5 inline-flex w-full items-center gap-1.5 overflow-x-auto rounded-xl bg-neutral-900/60 p-1 text-[11px] font-bold uppercase tracking-[0.15em] sm:mb-6 sm:text-xs md:w-auto">
           <button
             type="button"
             onClick={() => setMode("single")}
-            className={`flex-1 rounded-lg px-4 py-2 transition-all duration-200 md:flex-none ${
+            className={`flex-1 rounded-lg px-5 py-2.5 transition-all duration-200 active:scale-95 sm:py-2 md:flex-none ${
               mode === "single"
                 ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30"
                 : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
@@ -302,7 +316,7 @@ function BuyPanel({ apiKey, env, onAfterTrade }) {
           <button
             type="button"
             onClick={() => setMode("batch")}
-            className={`flex-1 rounded-lg px-4 py-2 transition-all duration-200 md:flex-none ${
+            className={`flex-1 rounded-lg px-5 py-2.5 transition-all duration-200 active:scale-95 sm:py-2 md:flex-none ${
               mode === "batch"
                 ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30"
                 : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
@@ -313,7 +327,7 @@ function BuyPanel({ apiKey, env, onAfterTrade }) {
           <button
             type="button"
             onClick={() => setMode("t2t")}
-            className={`flex-1 rounded-lg px-4 py-2 transition-all duration-200 md:flex-none ${
+            className={`flex-1 rounded-lg px-5 py-2.5 transition-all duration-200 active:scale-95 sm:py-2 md:flex-none ${
               mode === "t2t"
                 ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30"
                 : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
@@ -345,7 +359,7 @@ function BuyPanel({ apiKey, env, onAfterTrade }) {
           {mode === "single" && (
             <>
               <div>
-                <label className="mb-2 block text-xs font-semibold tracking-wide text-neutral-300">
+                <label className="mb-2 block text-xs font-semibold tracking-wide text-neutral-300 sm:text-sm">
                   To Token{" "}
                   <span className="text-neutral-600">(symbol or address)</span>
                 </label>
@@ -354,7 +368,7 @@ function BuyPanel({ apiKey, env, onAfterTrade }) {
                   placeholder="e.g. WIF, BONK, SOL"
                   value={buyToToken}
                   onChange={(e) => setBuyToToken(e.target.value)}
-                  className="w-full rounded-lg border border-neutral-700/60 bg-neutral-900/60 px-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-600 outline-none transition-all duration-200 focus:border-emerald-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-emerald-500/20"
+                  className="w-full rounded-lg border border-neutral-700/60 bg-neutral-900/60 px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-600 outline-none transition-all duration-200 focus:border-emerald-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-emerald-500/20 sm:px-3.5 sm:py-2.5"
                 />
               </div>
 
@@ -513,11 +527,11 @@ function BuyPanel({ apiKey, env, onAfterTrade }) {
           )}
         </div>
 
-        {/* Submit Button */}
+        {/* Submit Button - Touch-friendly */}
         <button
           type="submit"
           disabled={loading}
-          className="group/btn relative mt-6 w-full overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 py-3 text-xs font-bold uppercase tracking-[0.18em] text-black shadow-lg shadow-emerald-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+          className="group/btn relative mt-5 w-full overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-black shadow-lg shadow-emerald-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none sm:mt-6 sm:py-3 sm:text-sm"
         >
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 transition-opacity duration-300 group-hover/btn:opacity-100" />
           <span className="relative z-10 flex items-center justify-center gap-2">
@@ -654,8 +668,11 @@ function SellPanel({ apiKey, env, onAfterTrade }) {
 
       if (mode === "single") {
         if (!sellToken || !sellAmount) {
-          alert("Please fill token and amount first.");
+          showError("Please fill token and amount first.");
+          setLoading(false);
+          return;
         } else {
+          const toastId = showLoading("Executing sell trade...");
           await executeTrade(apiKey, env, {
             fromChainKey: fromChain,
             toChainKey: toChain,
@@ -664,14 +681,18 @@ function SellPanel({ apiKey, env, onAfterTrade }) {
             amount: sellAmount,
             reason: sellReason || "SELL",
           });
-          alert("Single sell executed successfully!");
+          dismissToast(toastId);
+          showSuccess(`Sell executed! ${sellAmount} ${sellToken} → USDC`);
         }
       } else if (mode === "batch") {
         const total = Number(batchTotal || 0);
         const step = Number(batchStep || 0);
         if (!batchToken || !total || !step) {
-          alert("Please fill token, total amount, and per trade.");
+          showError("Please fill token, total amount, and per trade.");
+          setLoading(false);
+          return;
         } else {
+          const toastId = showLoading("Executing batch sell...");
           let sold = 0;
           while (sold + 1e-12 < total) {
             const amt = Math.min(step, total - sold);
@@ -685,12 +706,16 @@ function SellPanel({ apiKey, env, onAfterTrade }) {
             });
             sold += amt;
           }
-          alert("Batch sell completed successfully!");
+          dismissToast(toastId);
+          showSuccess(`Batch sell completed! Total: ${total} ${batchToken} → USDC`);
         }
       } else if (mode === "t2t") {
         if (!t2tFromToken || !t2tToToken || !t2tAmount) {
-          alert("Please fill all token and amount fields.");
+          showError("Please fill all token and amount fields.");
+          setLoading(false);
+          return;
         } else {
+          const toastId = showLoading("Executing token swap...");
           await executeTrade(apiKey, env, {
             fromChainKey: fromChain,
             toChainKey: toChain,
@@ -699,24 +724,25 @@ function SellPanel({ apiKey, env, onAfterTrade }) {
             amount: t2tAmount,
             reason: t2tReason || "TOKEN TO TOKEN",
           });
-          alert("Token swap executed successfully!");
+          dismissToast(toastId);
+          showSuccess(`Token swap executed! ${t2tAmount} ${t2tFromToken} → ${t2tToToken}`);
         }
       }
 
       if (onAfterTrade) onAfterTrade();
     } catch (err) {
       console.error(err);
-      alert(`Trade failed: ${err.message}`);
+      showError(`Trade failed: ${err.message}`);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="mt-4 grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+    <div className="mt-4 grid grid-cols-1 gap-5 sm:gap-6 xl:grid-cols-[1.2fr_0.8fr]">
       <form
         onSubmit={handleSubmit}
-        className="group relative overflow-hidden rounded-2xl border border-neutral-800/60 bg-gradient-to-b from-neutral-950/95 via-neutral-950/90 to-black/95 p-6 shadow-xl backdrop-blur-xl transition-all duration-300 hover:border-rose-500/30 hover:shadow-rose-500/10"
+        className="group relative overflow-hidden rounded-xl border border-neutral-800/60 bg-gradient-to-b from-neutral-950/95 via-neutral-950/90 to-black/95 p-5 shadow-xl backdrop-blur-xl transition-all duration-300 hover:border-rose-500/30 hover:shadow-rose-500/10 sm:rounded-2xl sm:p-6"
       >
         {/* Top accent border */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-rose-400/50 to-transparent" />
@@ -724,16 +750,16 @@ function SellPanel({ apiKey, env, onAfterTrade }) {
         {/* Section Header */}
         <div className="mb-5 flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-neutral-400">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-neutral-400 sm:text-sm">
               Sell Control
             </p>
-            <p className="mt-0.5 text-[10px] text-neutral-600">
+            <p className="mt-0.5 text-[10px] text-neutral-600 sm:text-[11px]">
               Execute single, batch, or token-to-token sells
             </p>
           </div>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10 sm:h-9 sm:w-9">
             <svg
-              className="h-4 w-4 text-rose-400"
+              className="h-4 w-4 text-rose-400 sm:h-5 sm:w-5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -748,12 +774,12 @@ function SellPanel({ apiKey, env, onAfterTrade }) {
           </div>
         </div>
 
-        {/* Mode Switcher */}
-        <div className="mb-6 inline-flex w-full items-center gap-1.5 overflow-x-auto rounded-xl bg-neutral-900/60 p-1 text-[10px] font-bold uppercase tracking-[0.15em] md:w-auto">
+        {/* Mode Switcher - Touch-friendly */}
+        <div className="mb-5 inline-flex w-full items-center gap-1.5 overflow-x-auto rounded-xl bg-neutral-900/60 p-1 text-[11px] font-bold uppercase tracking-[0.15em] sm:mb-6 sm:text-xs md:w-auto">
           <button
             type="button"
             onClick={() => setMode("single")}
-            className={`flex-1 rounded-lg px-4 py-2 transition-all duration-200 md:flex-none ${
+            className={`flex-1 rounded-lg px-5 py-2.5 transition-all duration-200 active:scale-95 sm:py-2 md:flex-none ${
               mode === "single"
                 ? "bg-rose-500 text-white shadow-lg shadow-rose-500/30"
                 : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
@@ -764,7 +790,7 @@ function SellPanel({ apiKey, env, onAfterTrade }) {
           <button
             type="button"
             onClick={() => setMode("batch")}
-            className={`flex-1 rounded-lg px-4 py-2 transition-all duration-200 md:flex-none ${
+            className={`flex-1 rounded-lg px-5 py-2.5 transition-all duration-200 active:scale-95 sm:py-2 md:flex-none ${
               mode === "batch"
                 ? "bg-rose-500 text-white shadow-lg shadow-rose-500/30"
                 : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
@@ -775,7 +801,7 @@ function SellPanel({ apiKey, env, onAfterTrade }) {
           <button
             type="button"
             onClick={() => setMode("t2t")}
-            className={`flex-1 rounded-lg px-4 py-2 transition-all duration-200 md:flex-none ${
+            className={`flex-1 rounded-lg px-5 py-2.5 transition-all duration-200 active:scale-95 sm:py-2 md:flex-none ${
               mode === "t2t"
                 ? "bg-rose-500 text-white shadow-lg shadow-rose-500/30"
                 : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
@@ -976,11 +1002,11 @@ function SellPanel({ apiKey, env, onAfterTrade }) {
           )}
         </div>
 
-        {/* Submit Button */}
+        {/* Submit Button - Touch-friendly */}
         <button
           type="submit"
           disabled={loading}
-          className="group/btn relative mt-6 w-full overflow-hidden rounded-xl bg-gradient-to-r from-rose-500 to-amber-400 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white shadow-lg shadow-rose-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-rose-500/40 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+          className="group/btn relative mt-5 w-full overflow-hidden rounded-xl bg-gradient-to-r from-rose-500 to-amber-400 py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-white shadow-lg shadow-rose-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-rose-500/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none sm:mt-6 sm:py-3 sm:text-sm"
         >
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 transition-opacity duration-300 group-hover/btn:opacity-100" />
           <span className="relative z-10 flex items-center justify-center gap-2">
@@ -1085,202 +1111,6 @@ function SellPanel({ apiKey, env, onAfterTrade }) {
   );
 }
 
-// ======================= CHATBOT PANEL =======================
-
-function ChatbotPanel({
-  openaiKey,
-  onSaveKey,
-  balances,
-  pnl,
-  env,
-  agentName,
-}) {
-  const [tempKey, setTempKey] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const hasKey = !!openaiKey;
-
-  const contextSummary = (() => {
-    const totalUsd =
-      (balances || []).reduce((sum, b) => sum + (b.usd || 0), 0) || 0;
-    return `Environment: ${env}. Agent: ${agentName || "-"}.
-Total balance (approx): $${totalUsd.toFixed(2)}.
-Number of positions: ${(pnl || []).length}.`;
-  })();
-
-  async function handleSend(e) {
-    e.preventDefault();
-    if (!input.trim() || !openaiKey) return;
-
-    const userMessage = { role: "user", content: input.trim() };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
-    setInput("");
-    setLoading(true);
-    setError("");
-
-    try {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer {openaiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are an assistant helping a user understand their Recall trading agent performance. Be concise and practical.",
-            },
-            {
-              role: "system",
-              content: `Context: ${contextSummary}`,
-            },
-            ...newMessages,
-          ],
-        }),
-      });
-
-      const data = await res.json();
-      const reply =
-        data?.choices?.[0]?.message?.content ||
-        "I couldn't generate a response. Please try again.";
-
-      setMessages([...newMessages, { role: "assistant", content: reply }]);
-    } catch (err) {
-      console.error(err);
-      setError(
-        "Failed to contact OpenAI. Please check your API key or try again."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (!hasKey) {
-    return (
-      <div className="mx-auto max-w-md rounded-2xl border border-neutral-800/60 bg-neutral-950/90 p-6 text-center shadow-xl">
-        <h2 className="mb-2 text-lg font-semibold text-neutral-100">
-          Enable Chatbot
-        </h2>
-        <p className="mb-4 text-sm text-neutral-400">
-          Enter your{" "}
-          <span className="font-medium text-neutral-200">
-            OpenAI API Key
-          </span>{" "}
-          to unlock AI assistance for your Recall agent.
-          <br />
-          Your key is stored{" "}
-          <span className="font-medium">locally</span> in this browser only.
-        </p>
-
-        <input
-          type="password"
-          placeholder="OpenAI API Key..."
-          value={tempKey}
-          onChange={(e) => setTempKey(e.target.value)}
-          className="mb-3 w-full rounded-lg border border-neutral-700/70 bg-neutral-900/70 px-3 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-600 outline-none transition-all duration-200 focus:border-purple-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-purple-500/20"
-        />
-
-        <button
-          onClick={() => {
-            if (!tempKey.trim()) return;
-            onSaveKey(tempKey);
-            setTempKey("");
-          }}
-          className="w-full rounded-lg bg-gradient-to-r from-purple-500 to-sky-500 py-2.5 text-sm font-semibold text-black shadow-lg shadow-purple-500/40 transition-all hover:shadow-purple-500/60"
-        >
-          Save & Activate
-        </button>
-
-        <p className="mt-3 text-[11px] text-neutral-500">
-          You can remove this key anytime by logging out.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mx-auto flex h-[480px] max-h-[70vh] max-w-3xl flex-col rounded-2xl border border-neutral-800/60 bg-neutral-950/95 p-4 shadow-xl md:p-5">
-      <div className="mb-3 flex items-center justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-400">
-            Chatbot
-          </p>
-          <p className="text-[11px] text-neutral-500">
-            Ask anything about your agent&apos;s performance, balances, or
-            strategy ideas.
-          </p>
-        </div>
-        <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-300">
-          OpenAI Connected
-        </span>
-      </div>
-
-      <div className="mb-3 flex-1 space-y-2 overflow-y-auto rounded-xl bg-neutral-900/60 p-3 text-sm">
-        {messages.length === 0 && (
-          <div className="rounded-lg border border-neutral-800/80 bg-neutral-900/80 p-3 text-xs text-neutral-400">
-            💡 Example questions:
-            <ul className="mt-1 list-disc space-y-1 pl-4">
-              <li>“How is my agent performing today?”</li>
-              <li>“Explain my current PnL risk.”</li>
-              <li>“What should I watch from this portfolio?”</li>
-            </ul>
-          </div>
-        )}
-
-        {messages.map((m, idx) => (
-          <div
-            key={idx}
-            className={`flex ${
-              m.role === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
-            <div
-              className={`max-w-[80%] rounded-2xl px-3 py-2 text-xs md:text-sm ${
-                m.role === "user"
-                  ? "bg-sky-500 text-black"
-                  : "bg-neutral-800/90 text-neutral-100"
-              }`}
-            >
-              {m.content}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {error && (
-        <div className="mb-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSend} className="mt-1 flex items-center gap-2">
-        <input
-          type="text"
-          placeholder="Ask something about your agent..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          disabled={loading}
-          className="flex-1 rounded-lg border border-neutral-700/70 bg-neutral-900/80 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 outline-none transition-all duration-200 focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/20 disabled:cursor-not-allowed disabled:opacity-70"
-        />
-        <button
-          type="submit"
-          disabled={loading || !input.trim()}
-          className="rounded-lg bg-gradient-to-r from-sky-500 to-emerald-500 px-4 py-2 text-xs font-semibold text-black shadow-lg shadow-sky-500/40 transition-all hover:shadow-sky-500/60 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
-        >
-          {loading ? "Thinking..." : "Send"}
-        </button>
-      </form>
-    </div>
-  );
-}
-
 // ======================= MAIN DASHBOARD =====================
 
 export default function Dashboard() {
@@ -1300,23 +1130,21 @@ export default function Dashboard() {
   const isConnected = !!(agentName && apiKey);
 
   useEffect(() => {
-    const stored = localStorage.getItem("recallSession");
+    const stored = secureGet("recallSession");
     if (stored) {
       try {
-        const saved = JSON.parse(stored);
-        if (saved.agentName && saved.apiKey && saved.env) {
-          connect(saved.agentName, saved.apiKey, saved.env, { fromStorage: true });
+        if (stored.agentName && stored.apiKey && stored.env) {
+          connect(stored.agentName, stored.apiKey, stored.env, { fromStorage: true });
         }
       } catch {
         // ignore
       }
     }
 
-    const storedOpenAI = localStorage.getItem("recallOpenAIKey");
+    const storedOpenAI = secureGet("recallOpenAIKey");
     if (storedOpenAI) {
       setOpenaiKey(storedOpenAI);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function connect(agent, key, environment, opts = {}) {
@@ -1329,10 +1157,7 @@ export default function Dashboard() {
       setErrorMsg("");
 
       if (!opts.fromStorage) {
-        localStorage.setItem(
-          "recallSession",
-          JSON.stringify({ agentName: agent, apiKey: key, env: environment })
-        );
+        secureSet("recallSession", { agentName: agent, apiKey: key, env: environment });
       }
 
       const [bal, his, pnl] = await Promise.all([
@@ -1386,7 +1211,8 @@ export default function Dashboard() {
     const trimmed = (key || "").trim();
     if (!trimmed) return;
     setOpenaiKey(trimmed);
-    localStorage.setItem("recallOpenAIKey", trimmed);
+    secureSet("recallOpenAIKey", trimmed);
+    showSuccess("OpenAI API key saved securely");
   }
 
   function logout() {
@@ -1399,8 +1225,9 @@ export default function Dashboard() {
     setErrorMsg("");
     setActiveTab("balances");
     setOpenaiKey(null);
-    localStorage.removeItem("recallSession");
-    localStorage.removeItem("recallOpenAIKey");
+    secureRemove("recallSession");
+    secureRemove("recallOpenAIKey");
+    showSuccess("Logged out successfully");
   }
 
   const balanceRows = normalizeBalances(balances);
@@ -1411,32 +1238,34 @@ export default function Dashboard() {
       {/* ============ HERO (NOT CONNECTED) ============ */}
       {!isConnected && (
         <div className="relative flex min-h-screen flex-col overflow-hidden bg-black">
-          <div className="absolute left-4 top-4 z-10 flex items-center gap-2 md:left-6 md:top-6 md:gap-3 lg:left-10 lg:top-8">
+          {/* Mobile-first logo header */}
+          <div className="absolute left-3 top-3 z-10 flex items-center gap-2 sm:left-4 sm:top-4 md:left-6 md:top-6 lg:left-10 lg:top-8">
             <img
               src={RecallLogo}
               alt="Recall Logo"
-              className="h-8 w-auto object-contain md:h-10 lg:h-12"
+              className="h-9 w-auto object-contain sm:h-10 md:h-12 lg:h-14"
             />
             <span className="hidden text-[10px] font-bold uppercase tracking-[0.25em] text-neutral-300 sm:inline sm:text-xs md:text-sm">
               Recall Agent Dashboard
             </span>
           </div>
 
-          <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-16 text-center md:py-20">
-            <h1 className="mb-3 bg-gradient-to-b from-white to-neutral-400 bg-clip-text text-4xl font-black tracking-tight text-transparent sm:text-5xl md:mb-4 md:text-6xl lg:text-7xl">
+          {/* Mobile-optimized hero section */}
+          <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-20 text-center sm:px-6 sm:py-24 md:py-20">
+            <h1 className="mb-4 bg-gradient-to-b from-white to-neutral-400 bg-clip-text text-3xl font-black tracking-tight text-transparent sm:mb-5 sm:text-4xl md:mb-4 md:text-5xl lg:text-6xl xl:text-7xl">
               Enter the Arena
             </h1>
 
-            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-neutral-400 md:mb-2 md:text-xs">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-neutral-400 sm:text-xs md:mb-2">
               Connect to Recall
             </p>
-            <p className="mb-8 max-w-xl px-4 text-xs leading-relaxed text-neutral-400 md:mb-12 md:text-sm lg:text-base">
+            <p className="mb-10 max-w-xs px-2 text-sm leading-relaxed text-neutral-400 sm:max-w-md sm:px-4 md:mb-12 md:max-w-xl md:text-base lg:text-lg">
               Enter your credentials to access the dashboard and monitor your
               agent&apos;s performance across chains.
             </p>
 
-            <div className="relative w-full max-w-3xl">
-              <div className="pointer-events-none absolute left-1/2 top-1/2 h-44 w-[150vw] -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-rose-500 via-amber-300 to-rose-500 opacity-80 blur-3xl" />
+            <div className="relative w-full max-w-3xl px-4 sm:px-0">
+              <div className="pointer-events-none absolute left-1/2 top-1/2 h-32 w-[150vw] -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-rose-500 via-amber-300 to-rose-500 opacity-80 blur-3xl sm:h-44" />
               <div className="relative z-10 flex justify-center">
                 <ApiKeyForm onConnect={connect} />
               </div>
@@ -1447,25 +1276,26 @@ export default function Dashboard() {
 
       {/* ============ DASHBOARD (CONNECTED) ============ */}
       {isConnected && (
-        <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 pb-8 pt-4 md:px-6 md:pb-10 md:pt-6 lg:px-6 lg:pt-8">
-          <header className="mb-6 flex flex-col items-start justify-between gap-3 md:mb-8 md:flex-row md:items-center md:gap-4">
-            <div className="flex items-center gap-2 md:gap-3">
+        <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 pb-8 pt-4 sm:px-5 sm:pb-10 sm:pt-5 md:px-6 md:pb-12 md:pt-6 lg:px-8 lg:pt-8">
+          {/* Mobile-optimized header */}
+          <header className="mb-5 flex flex-col items-start justify-between gap-4 sm:mb-6 md:mb-8 md:flex-row md:items-center md:gap-4">
+            <div className="flex items-center gap-3 sm:gap-3 md:gap-4">
               <img
                 src={RecallLogo}
                 alt="Recall Logo"
-                className="h-12 w-12 object-contain md:h-16 md:w-16"
+                className="h-14 w-14 object-contain sm:h-16 sm:w-16 md:h-16 md:w-16 lg:h-18 lg:w-18"
               />
               <div>
-                <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-neutral-500 md:text-[10px]">
+                <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-neutral-500 sm:text-[11px] md:text-xs">
                   Recall Agent Dashboard
                 </div>
-                <h1 className="mt-0.5 text-xl font-bold md:mt-1 md:text-2xl lg:text-3xl">
+                <h1 className="mt-1 text-lg font-bold leading-tight sm:text-xl md:mt-1 md:text-2xl lg:text-3xl">
                   Welcome back,{" "}
                   <span className="bg-gradient-to-r from-sky-400 to-emerald-400 bg-clip-text text-transparent">
                     {agentName}
                   </span>
                 </h1>
-                <div className="mt-0.5 text-[10px] text-neutral-500 md:mt-1 md:text-xs">
+                <div className="mt-1 text-xs text-neutral-500 sm:text-sm md:text-xs">
                   Environment:{" "}
                   <span className="font-medium uppercase text-neutral-300">
                     {env}
@@ -1474,11 +1304,12 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="flex w-full items-center gap-2 md:w-auto md:gap-3">
+            {/* Touch-friendly action buttons */}
+            <div className="flex w-full items-center gap-2 sm:gap-3 md:w-auto">
               {refreshing && (
-                <div className="flex items-center gap-1.5 text-[10px] text-sky-400 md:gap-2 md:text-xs">
+                <div className="flex items-center gap-1.5 text-xs text-sky-400 sm:gap-2 sm:text-sm md:text-xs">
                   <svg
-                    className="h-3 w-3 animate-spin"
+                    className="h-4 w-4 animate-spin sm:h-4 sm:w-4"
                     fill="none"
                     viewBox="0 0 24 24"
                   >
@@ -1496,18 +1327,18 @@ export default function Dashboard() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  Updating...
+                  <span className="hidden sm:inline">Updating...</span>
                 </div>
               )}
               <button
                 onClick={refreshData}
-                className="flex-1 rounded-lg border border-neutral-700/70 bg-neutral-900/50 px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-neutral-200 transition-all hover:border-sky-400/80 hover:bg-neutral-900/80 hover:text-sky-300 md:flex-none md:px-4 md:py-2 md:text-[11px]"
+                className="flex-1 rounded-lg border border-neutral-700/70 bg-neutral-900/50 px-4 py-2.5 text-xs font-medium uppercase tracking-[0.12em] text-neutral-200 transition-all active:scale-95 hover:border-sky-400/80 hover:bg-neutral-900/80 hover:text-sky-300 sm:py-2.5 md:flex-none md:px-5 md:text-[11px]"
               >
                 Refresh
               </button>
               <button
                 onClick={logout}
-                className="flex-1 rounded-lg border border-neutral-700/70 bg-neutral-900/50 px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-neutral-200 transition-all hover:border-rose-500/80 hover:bg-neutral-900/80 hover:text-rose-300 md:flex-none md:px-4 md:py-2 md:text-[11px]"
+                className="flex-1 rounded-lg border border-neutral-700/70 bg-neutral-900/50 px-4 py-2.5 text-xs font-medium uppercase tracking-[0.12em] text-neutral-200 transition-all active:scale-95 hover:border-rose-500/80 hover:bg-neutral-900/80 hover:text-rose-300 sm:py-2.5 md:flex-none md:px-5 md:text-[11px]"
               >
                 Logout
               </button>
@@ -1544,14 +1375,15 @@ export default function Dashboard() {
             </div>
           )}
 
-          <section className="relative overflow-hidden rounded-2xl border border-neutral-800/60 bg-gradient-to-b from-neutral-950/95 via-neutral-950/90 to-black shadow-2xl shadow-neutral-950/50">
+          <section className="relative overflow-hidden rounded-xl border border-neutral-800/60 bg-gradient-to-b from-neutral-950/95 via-neutral-950/90 to-black shadow-2xl shadow-neutral-950/50 sm:rounded-2xl">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/30 to-transparent" />
 
-            <div className="overflow-x-auto border-b border-neutral-800/50 bg-neutral-950/50 px-3 pt-3 md:px-5 md:pt-5">
-              <div className="inline-flex min-w-full items-center gap-1 rounded-t-xl bg-neutral-900/60 p-0.5 text-[9px] font-bold uppercase tracking-[0.15em] md:min-w-0 md:gap-1.5 md:p-1 md:text-[10px]">
+            {/* Mobile-optimized tab navigation */}
+            <div className="scrollbar-hide overflow-x-auto border-b border-neutral-800/50 bg-neutral-950/50 px-2 pt-2 sm:px-3 sm:pt-3 md:px-5 md:pt-5">
+              <div className="inline-flex min-w-full items-center gap-1 rounded-t-xl bg-neutral-900/60 p-1 text-[10px] font-bold uppercase tracking-[0.15em] sm:gap-1.5 sm:text-[11px] md:min-w-0 md:p-1.5 md:text-xs">
                 <button
                   onClick={() => setActiveTab("balances")}
-                  className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all duration-200 md:flex-none md:px-4 md:py-2.5 ${
+                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
                     activeTab === "balances"
                       ? "bg-sky-500 text-black shadow-lg shadow-sky-500/30"
                       : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
@@ -1561,7 +1393,7 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={() => setActiveTab("history")}
-                  className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all duration-200 md:flex-none md:px-4 md:py-2.5 ${
+                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
                     activeTab === "history"
                       ? "bg-sky-500 text-black shadow-lg shadow-sky-500/30"
                       : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
@@ -1571,7 +1403,7 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={() => setActiveTab("pnl")}
-                  className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all duration-200 md:flex-none md:px-4 md:py-2.5 ${
+                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
                     activeTab === "pnl"
                       ? "bg-sky-500 text-black shadow-lg shadow-sky-500/30"
                       : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
@@ -1581,7 +1413,7 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={() => setActiveTab("buy")}
-                  className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all duration-200 md:flex-none md:px-4 md:py-2.5 ${
+                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
                     activeTab === "buy"
                       ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30"
                       : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
@@ -1591,7 +1423,7 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={() => setActiveTab("sell")}
-                  className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all duration-200 md:flex-none md:px-4 md:py-2.5 ${
+                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
                     activeTab === "sell"
                       ? "bg-rose-500 text-white shadow-lg shadow-rose-500/30"
                       : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
@@ -1601,7 +1433,7 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={() => setActiveTab("chatbot")}
-                  className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all duration-200 md:flex-none md:px-4 md:py-2.5 ${
+                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
                     activeTab === "chatbot"
                       ? "bg-purple-500 text-white shadow-lg shadow-purple-500/30"
                       : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
@@ -1612,7 +1444,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="p-3 md:p-5">
+            <div className="p-4 sm:p-5 md:p-6 lg:p-5">
               {activeTab === "balances" && (
                 <div>
                   {loading ? (
@@ -1638,36 +1470,36 @@ export default function Dashboard() {
                       description="Your wallet is empty. Execute trades to see balances here."
                     />
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead className="border-b border-neutral-800 text-[11px] uppercase tracking-wider text-neutral-500">
+                    <div className="overflow-x-auto -mx-4 sm:mx-0">
+                      <table className="w-full min-w-[500px] text-xs sm:min-w-0 sm:text-sm">
+                        <thead className="border-b border-neutral-800 text-[10px] uppercase tracking-wider text-neutral-500 sm:text-[11px]">
                           <tr className="text-left">
-                            <th className="py-3 font-semibold">Token</th>
-                            <th className="py-3 text-right font-semibold">
+                            <th className="py-3 pl-4 font-semibold sm:pl-0">Token</th>
+                            <th className="py-3 pr-2 text-right font-semibold sm:pr-4">
                               Amount
                             </th>
-                            <th className="py-3 text-right font-semibold">
+                            <th className="py-3 pr-2 text-right font-semibold sm:pr-4">
                               USD Value
                             </th>
-                            <th className="py-3 font-semibold">Chain</th>
+                            <th className="py-3 pr-4 font-semibold">Chain</th>
                           </tr>
                         </thead>
                         <tbody>
                           {balanceRows.map((row) => (
                             <tr
                               key={row.id}
-                              className="border-b border-neutral-900/60 transition-colors hover:bg-neutral-900/40"
+                              className="border-b border-neutral-900/60 transition-colors active:bg-neutral-900/60 hover:bg-neutral-900/40"
                             >
-                              <td className="py-3.5 pr-4 font-semibold text-neutral-100">
+                              <td className="py-4 pl-4 font-semibold text-neutral-100 sm:pl-0 sm:py-3.5">
                                 {row.token}
                               </td>
-                              <td className="py-3.5 pr-4 text-right font-mono text-neutral-300">
+                              <td className="py-4 pr-2 text-right font-mono text-neutral-300 sm:pr-4 sm:py-3.5">
                                 {row.amount.toFixed(6)}
                               </td>
-                              <td className="py-3.5 pr-4 text-right font-mono text-sky-300">
+                              <td className="py-4 pr-2 text-right font-mono text-sky-300 sm:pr-4 sm:py-3.5">
                                 ${row.usd.toFixed(2)}
                               </td>
-                              <td className="py-3.5 pr-4 text-xs text-neutral-400">
+                              <td className="py-4 pr-4 text-[10px] text-neutral-400 sm:text-xs sm:py-3.5">
                                 {row.chain}
                               </td>
                             </tr>
@@ -1704,40 +1536,40 @@ export default function Dashboard() {
                       description="Execute trades to see your transaction history here."
                     />
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead className="border-b border-neutral-800 text-[11px] uppercase tracking-wider text-neutral-500">
+                    <div className="overflow-x-auto -mx-4 sm:mx-0">
+                      <table className="w-full min-w-[600px] text-xs sm:min-w-0 sm:text-sm">
+                        <thead className="border-b border-neutral-800 text-[10px] uppercase tracking-wider text-neutral-500 sm:text-[11px]">
                           <tr className="text-left">
-                            <th className="py-3 font-semibold">Pair</th>
-                            <th className="py-3 text-right font-semibold">
+                            <th className="py-3 pl-4 font-semibold sm:pl-0">Pair</th>
+                            <th className="py-3 pr-2 text-right font-semibold sm:pr-4">
                               From
                             </th>
-                            <th className="py-3 text-right font-semibold">
+                            <th className="py-3 pr-2 text-right font-semibold sm:pr-4">
                               To
                             </th>
-                            <th className="py-3 font-semibold">Reason</th>
-                            <th className="py-3 font-semibold">Time</th>
+                            <th className="py-3 pr-2 font-semibold sm:pr-4">Reason</th>
+                            <th className="py-3 pr-4 font-semibold">Time</th>
                           </tr>
                         </thead>
                         <tbody>
                           {historyRows.map((trow) => (
                             <tr
                               key={trow.id}
-                              className="border-b border-neutral-900/60 transition-colors hover:bg-neutral-900/40"
+                              className="border-b border-neutral-900/60 transition-colors active:bg-neutral-900/60 hover:bg-neutral-900/40"
                             >
-                              <td className="py-3.5 pr-4 font-semibold text-neutral-100">
+                              <td className="py-4 pl-4 font-semibold text-neutral-100 sm:pl-0 sm:py-3.5">
                                 {trow.from} → {trow.to}
                               </td>
-                              <td className="py-3.5 pr-4 text-right font-mono text-neutral-300">
+                              <td className="py-4 pr-2 text-right font-mono text-neutral-300 sm:pr-4 sm:py-3.5">
                                 {trow.fromAmount.toFixed(4)}
                               </td>
-                              <td className="py-3.5 pr-4 text-right font-mono text-sky-300">
+                              <td className="py-4 pr-2 text-right font-mono text-sky-300 sm:pr-4 sm:py-3.5">
                                 {trow.toAmount.toFixed(4)}
                               </td>
-                              <td className="py-3.5 pr-4 text-xs text-neutral-400">
+                              <td className="py-4 pr-2 text-[10px] text-neutral-400 sm:text-xs sm:pr-4 sm:py-3.5">
                                 {trow.reason}
                               </td>
-                              <td className="py-3.5 pr-4 text-xs text-neutral-500">
+                              <td className="py-4 pr-4 text-[10px] text-neutral-500 sm:text-xs sm:py-3.5">
                                 {trow.time}
                               </td>
                             </tr>
@@ -1753,21 +1585,21 @@ export default function Dashboard() {
                 <div>
                   <PnlChart data={pnlData} />
                   {pnlData.length > 0 && (
-                    <div className="mt-6 overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead className="border-b border-neutral-800 text-[11px] uppercase tracking-wider text-neutral-500">
+                    <div className="mt-5 overflow-x-auto -mx-4 sm:mx-0 sm:mt-6">
+                      <table className="w-full min-w-[650px] text-xs sm:min-w-0 sm:text-sm">
+                        <thead className="border-b border-neutral-800 text-[10px] uppercase tracking-wider text-neutral-500 sm:text-[11px]">
                           <tr className="text-left">
-                            <th className="py-3 font-semibold">Token</th>
-                            <th className="py-3 text-right font-semibold">
+                            <th className="py-3 pl-4 font-semibold sm:pl-0">Token</th>
+                            <th className="py-3 pr-2 text-right font-semibold sm:pr-4">
                               Amount
                             </th>
-                            <th className="py-3 text-right font-semibold">
+                            <th className="py-3 pr-2 text-right font-semibold sm:pr-4">
                               Avg Buy
                             </th>
-                            <th className="py-3 text-right font-semibold">
+                            <th className="py-3 pr-2 text-right font-semibold sm:pr-4">
                               Current Value
                             </th>
-                            <th className="py-3 text-right font-semibold">
+                            <th className="py-3 pr-4 text-right font-semibold">
                               PNL
                             </th>
                           </tr>
@@ -1776,22 +1608,22 @@ export default function Dashboard() {
                           {pnlData.map((p, i) => (
                             <tr
                               key={i}
-                              className="border-b border-neutral-900/60 transition-colors hover:bg-neutral-900/40"
+                              className="border-b border-neutral-900/60 transition-colors active:bg-neutral-900/60 hover:bg-neutral-900/40"
                             >
-                              <td className="py-3.5 font-semibold text-neutral-100">
+                              <td className="py-4 pl-4 font-semibold text-neutral-100 sm:pl-0 sm:py-3.5">
                                 {p.token}
                               </td>
-                              <td className="py-3.5 text-right font-mono text-neutral-300">
+                              <td className="py-4 pr-2 text-right font-mono text-neutral-300 sm:pr-4 sm:py-3.5">
                                 {p.amount.toFixed(4)}
                               </td>
-                              <td className="py-3.5 text-right font-mono text-neutral-300">
+                              <td className="py-4 pr-2 text-right font-mono text-neutral-300 sm:pr-4 sm:py-3.5">
                                 ${p.avgBuy.toFixed(4)}
                               </td>
-                              <td className="py-3.5 text-right font-mono text-sky-300">
+                              <td className="py-4 pr-2 text-right font-mono text-sky-300 sm:pr-4 sm:py-3.5">
                                 ${p.currentValue.toFixed(2)}
                               </td>
                               <td
-                                className={`py-3.5 text-right font-mono font-semibold ${
+                                className={`py-4 pr-4 text-right font-mono font-semibold sm:py-3.5 ${
                                   p.pnl >= 0
                                     ? "text-emerald-400"
                                     : "text-rose-400"
@@ -1824,6 +1656,8 @@ export default function Dashboard() {
                   pnl={pnlData}
                   env={env}
                   agentName={agentName}
+                  apiKey={apiKey}
+                  onExecuteTrade={refreshData}
                 />
               )}
             </div>

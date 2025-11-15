@@ -69,13 +69,6 @@ export default function PnlChart({ data }) {
     );
   }
 
-  // Calculate color based on PNL value
-  const getBarColor = (value) => {
-    if (value > 0) return "#34d399"; // emerald-400
-    if (value < 0) return "#f87171"; // rose-400
-    return "#64748b"; // neutral-500
-  };
-
   return (
     <div className="w-full rounded-xl border border-neutral-800/60 bg-neutral-950/40 p-4">
       <div className="mb-4 flex items-center justify-between">
