@@ -5,6 +5,11 @@ const BASE_URLS = {
   competitions: "https://api.competitions.recall.network",
 };
 
+// Detect if we're in production (deployed)
+function isProduction() {
+  return import.meta.env.PROD && window.location.hostname !== 'localhost';
+}
+
 // Helper to build headers
 function buildHeaders(apiKey) {
   return {
@@ -22,6 +27,45 @@ function getBaseUrl(env) {
   return url;
 }
 
+// Proxy wrapper for production to bypass CORS
+async function fetchWithProxy(url, options = {}) {
+  // In production, use Vercel serverless proxy
+  if (isProduction()) {
+    const proxyUrl = '/api/proxy';
+
+    const response = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url,
+        method: options.method || 'GET',
+        headers: options.headers || {},
+        body: options.body ? JSON.parse(options.body) : undefined,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || `Proxy request failed: ${response.status}`);
+    }
+
+    // Return a response-like object
+    const data = await response.json();
+    return {
+      ok: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      json: async () => data,
+      text: async () => JSON.stringify(data),
+    };
+  }
+
+  // In development, use direct fetch
+  return fetch(url, options);
+}
+
 /**
  * Get balances from Recall API
  * Used in Dashboard -> Balances tab
@@ -29,7 +73,7 @@ function getBaseUrl(env) {
 export async function getBalances(apiKey, env) {
   const baseUrl = getBaseUrl(env);
 
-  const resp = await fetch(`${baseUrl}/api/agent/balances`, {
+  const resp = await fetchWithProxy(`${baseUrl}/api/agent/balances`, {
     method: "GET",
     headers: buildHeaders(apiKey),
   });
@@ -52,7 +96,7 @@ export async function getBalances(apiKey, env) {
 export async function getHistory(apiKey, env) {
   const baseUrl = getBaseUrl(env);
 
-  const resp = await fetch(`${baseUrl}/api/agent/trades`, {
+  const resp = await fetchWithProxy(`${baseUrl}/api/agent/trades`, {
     method: "GET",
     headers: buildHeaders(apiKey),
   });
@@ -81,7 +125,7 @@ export async function getPnlUnrealized(apiKey, env) {
   const baseUrl = getBaseUrl(env);
 
   try {
-    const resp = await fetch(`${baseUrl}/api/agent/pnl/unrealized`, {
+    const resp = await fetchWithProxy(`${baseUrl}/api/agent/pnl/unrealized`, {
       method: "GET",
       headers: buildHeaders(apiKey),
     });
@@ -147,7 +191,7 @@ export async function executeTrade(apiKey, env, payload) {
     // toChainKey: payload.toChainKey,
   };
 
-  const resp = await fetch(`${baseUrl}/api/trade/execute`, {
+  const resp = await fetchWithProxy(`${baseUrl}/api/trade/execute`, {
     method: "POST",
     headers: buildHeaders(apiKey),
     body: JSON.stringify(body),
