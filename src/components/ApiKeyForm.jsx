@@ -32,17 +32,13 @@ export default function ApiKeyForm({ onConnect }) {
   }
 
   return (
-    <div className="group relative mx-auto w-full max-w-md px-4 sm:px-0 animate-slide-up">
-      {/* Animated glow background */}
-      <div className="pointer-events-none absolute -inset-1 rounded-2xl bg-gradient-to-r from-emerald-500/40 via-primary-400/40 to-teal-500/40 opacity-60 blur-2xl transition-opacity duration-500 group-hover:opacity-80 animate-glow" />
-      <div className="pointer-events-none absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-primary-400/20 to-teal-500/20 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100" />
-
+    <div className="relative mx-auto w-full max-w-md px-4 sm:px-0 animate-fade-in">
       <form
         onSubmit={handleSubmit}
-        className="glass-strong relative z-10 w-full space-y-4 rounded-2xl border border-neutral-800/60 px-5 py-6 shadow-emerald transition-all duration-300 group-hover:border-emerald-500/30 group-hover:shadow-glow-lg sm:space-y-5 sm:px-7 sm:py-7"
+        className="relative w-full space-y-4 rounded-2xl border border-neutral-800/60 bg-neutral-900/60 backdrop-blur-xl px-5 py-6 shadow-2xl transition-all duration-200 hover:border-neutral-700/80 sm:space-y-5 sm:px-7 sm:py-7"
       >
-        {/* Subtle top border accent */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
+        {/* Subtle top border */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-neutral-600/40 to-transparent" />
 
         {/* Agent Name */}
         <div className="space-y-2 pt-2">
@@ -59,7 +55,7 @@ export default function ApiKeyForm({ onConnect }) {
             value={agent}
             onChange={(e) => setAgent(e.target.value)}
             disabled={isSubmitting}
-            className="w-full rounded-lg border border-neutral-700/70 bg-neutral-900/70 px-3 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-600 outline-none transition-all duration-200 focus:border-emerald-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3.5"
+            className="w-full rounded-lg border border-neutral-700/70 bg-neutral-800/70 px-3 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 outline-none transition-all duration-200 focus:border-neutral-600 focus:bg-neutral-800/90 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3.5"
           />
         </div>
 
@@ -78,7 +74,7 @@ export default function ApiKeyForm({ onConnect }) {
             value={recallKey}
             onChange={(e) => setRecallKey(e.target.value)}
             disabled={isSubmitting}
-            className="w-full rounded-lg border border-neutral-700/70 bg-neutral-900/70 px-3 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-600 outline-none transition-all duration-200 focus:border-emerald-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3.5"
+            className="w-full rounded-lg border border-neutral-700/70 bg-neutral-800/70 px-3 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 outline-none transition-all duration-200 focus:border-neutral-600 focus:bg-neutral-800/90 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3.5"
           />
           <p className="flex items-center gap-1.5 text-[10px] text-neutral-500">
             <svg
@@ -117,7 +113,7 @@ export default function ApiKeyForm({ onConnect }) {
             value={env}
             onChange={(e) => setEnv(e.target.value)}
             disabled={isSubmitting}
-            className="w-full cursor-pointer rounded-lg border border-neutral-700/70 bg-neutral-900/70 px-3 py-2.5 text-sm text-neutral-100 outline-none transition-all duration-200 focus:border-emerald-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3.5"
+            className="w-full cursor-pointer rounded-lg border border-neutral-700/70 bg-neutral-800/70 px-3 py-2.5 text-sm text-neutral-100 outline-none transition-all duration-200 focus:border-neutral-600 focus:bg-neutral-800/90 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3.5"
           >
             <option value="sandbox">Sandbox</option>
             {/* kalau memang nilai untuk kompetisi adalah "competitions",
@@ -135,7 +131,7 @@ export default function ApiKeyForm({ onConnect }) {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="group/btn relative mt-3 w-full overflow-hidden rounded-lg bg-gradient-to-r from-emerald-500 to-primary-600 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-emerald transition-all duration-300 hover:shadow-glow-lg hover:scale-[1.02] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none sm:mt-4 sm:py-3.5"
+          className="group/btn relative mt-3 w-full overflow-hidden rounded-lg bg-neutral-800 border border-neutral-700/50 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-lg transition-all duration-200 hover:bg-neutral-700 hover:border-neutral-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none sm:mt-4 sm:py-3.5"
         >
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 transition-opacity duration-300 group-hover/btn:opacity-100" />
           <span className="relative z-10 flex items-center justify-center gap-2">
