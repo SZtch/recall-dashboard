@@ -24,9 +24,50 @@ export default function VerifyWalletPanel({ apiKey }) {
     }
   }, []);
 
+  // Detect if we're in production
+  function isProduction() {
+    return import.meta.env.PROD && window.location.hostname !== 'localhost';
+  }
+
+  // Proxy wrapper for production to bypass CORS
+  async function fetchWithProxy(url, options = {}) {
+    if (isProduction()) {
+      const proxyUrl = '/api/proxy';
+
+      const response = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url,
+          method: options.method || 'GET',
+          headers: options.headers || {},
+          body: options.body ? JSON.parse(options.body) : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || `Proxy request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        json: async () => data,
+        text: async () => JSON.stringify(data),
+      };
+    }
+
+    return fetch(url, options);
+  }
+
   // Get nonce from Recall API
   async function getNonce() {
-    const response = await fetch(`${RECALL_API_BASE}/api/auth/agent/nonce`, {
+    const response = await fetchWithProxy(`${RECALL_API_BASE}/api/auth/agent/nonce`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -45,7 +86,7 @@ export default function VerifyWalletPanel({ apiKey }) {
 
   // Verify wallet with signed message
   async function verifyWallet(message, signature) {
-    const response = await fetch(`${RECALL_API_BASE}/api/auth/verify`, {
+    const response = await fetchWithProxy(`${RECALL_API_BASE}/api/auth/verify`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
