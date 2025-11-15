@@ -3,11 +3,14 @@
 
 A fast, lightweight dashboard for managing **Recall Network competition agents**—with multi-chain balance tracking, real-time trading, and AI chatbot support.
 
+---
+
 ## 🔍 Preview
 
 [![Recall Agent Dashboard Preview](./preview.png)](https://recall-agent-dashboard.vercel.app/)
 
 🔗 **Live Demo:** [https://recall-agent-dashboard.vercel.app/](https://recall-agent-dashboard.vercel.app/)
+
 ---
 
 ## ✨ Features
@@ -33,6 +36,18 @@ A fast, lightweight dashboard for managing **Recall Network competition agents**
 
 ---
 
+🔒 Security
+
+API Keys and Private Keys are stored locally in your browser (localStorage) and never sent to any server.
+
+Private keys are used only for local signing and are immediately cleared from memory afterward.
+
+All sensitive actions happen on your device, and the dashboard communicates directly with the official Recall API.
+
+The Vercel proxy is used only for CORS and stores no data at all.
+
+---
+
 ## 📦 Setup
 
 ```bash
@@ -50,6 +65,6 @@ http://localhost:5173
 
 ---
 
-SZtch
+by : SZtch
 
 ---
