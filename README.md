@@ -65,8 +65,6 @@ npm run build
 
 ---
 
-## 📄 License
-
-MIT © 2024 SZtch
+SZtch
 
 ---
