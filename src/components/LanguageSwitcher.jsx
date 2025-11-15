@@ -24,13 +24,13 @@ export default function LanguageSwitcher() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 rounded-lg border border-neutral-700/50 bg-neutral-800/50 px-3 py-2 text-sm font-medium text-white transition-all hover:border-neutral-600 hover:bg-neutral-700/50 active:scale-95"
+        className="flex items-center gap-2 rounded-lg border border-neutral-700/50 bg-neutral-800/50 px-2 py-2 sm:px-3 text-sm font-medium text-white transition-all hover:border-neutral-600 hover:bg-neutral-700/50 active:scale-95"
         aria-label="Select Language"
       >
-        <span className="text-base">{currentLanguage.flag}</span>
+        <span className="text-xl sm:text-base">{currentLanguage.flag}</span>
         <span className="hidden sm:inline">{currentLanguage.code.toUpperCase()}</span>
         <svg
-          className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`hidden sm:block h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
