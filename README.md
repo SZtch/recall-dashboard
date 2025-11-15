@@ -1,12 +1,13 @@
 
 # Recall Agent Dashboard
 
-A fast, lightweight dashboard for managing **Recall Network competition agents** — with multi-chain balance tracking, real-time trading, and AI chatbot support.
+A fast, lightweight dashboard for managing **Recall Network competition agents**—with multi-chain balance tracking, real-time trading, and AI chatbot support.
 
 ## 🔍 Preview
 
 [![Recall Agent Dashboard Preview](./preview.png)](https://recall-agent-dashboard.vercel.app/)
 
+🔗 **Live Demo:** [https://recall-agent-dashboard.vercel.app/](https://recall-agent-dashboard.vercel.app/)
 ---
 
 ## ✨ Features
