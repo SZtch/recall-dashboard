@@ -36,6 +36,22 @@ const CHAIN_OPTIONS = [
 
 // ---------------- HELPER FUNCTIONS ----------------
 
+// Map DexScreener chain IDs to Dashboard chain IDs
+function mapDexChainToDashboard(dexChain) {
+  const mapping = {
+    'eth': 'ethereum',
+    'ethereum': 'ethereum',
+    'base': 'base',
+    'polygon_pos': 'polygon',
+    'polygon': 'polygon',
+    'optimism': 'optimism',
+    'arbitrum': 'arbitrum',
+    'bsc': 'bsc',
+    'solana': 'solana',
+  };
+  return mapping[dexChain] || 'solana';
+}
+
 function normalizeBalances(raw) {
   if (!raw) return [];
   const list = Array.isArray(raw?.balances)
@@ -169,7 +185,7 @@ function ChainSelect({ value, onChange }) {
 
 // ======================== BUY PANEL ========================
 
-function BuyPanel({ apiKey, env, onAfterTrade }) {
+function BuyPanel({ apiKey, env, onAfterTrade, initialData, onClearInitialData }) {
   const [mode, setMode] = useState("single");
   const [fromChain, setFromChain] = useState("solana");
   const [toChain, setToChain] = useState("solana");
@@ -178,6 +194,20 @@ function BuyPanel({ apiKey, env, onAfterTrade }) {
   const [buyToToken, setBuyToToken] = useState("");
   const [buyAmount, setBuyAmount] = useState("");
   const [buyReason, setBuyReason] = useState("");
+
+  // Pre-fill form when initialData is provided
+  useEffect(() => {
+    if (initialData) {
+      if (initialData.toToken) setBuyToToken(initialData.toToken);
+      if (initialData.toChain) setToChain(initialData.toChain);
+      if (initialData.fromChain) setFromChain(initialData.fromChain);
+
+      // Clear initial data after using it
+      if (onClearInitialData) {
+        setTimeout(() => onClearInitialData(), 100);
+      }
+    }
+  }, [initialData, onClearInitialData]);
 
   const [batchToToken, setBatchToToken] = useState("");
   const [batchTotal, setBatchTotal] = useState("");
@@ -1134,6 +1164,9 @@ export default function Dashboard() {
   const [openaiKey, setOpenaiKey] = useState(null);
   const [chatbotOpen, setChatbotOpen] = useState(false);
 
+  // State for pre-filling buy form from DEX screener
+  const [buyFormInitialData, setBuyFormInitialData] = useState(null);
+
   const isConnected = !!(agentName && apiKey);
 
   useEffect(() => {
@@ -1657,7 +1690,13 @@ export default function Dashboard() {
               )}
 
               {activeTab === "buy" && (
-                <BuyPanel apiKey={apiKey} env={env} onAfterTrade={refreshData} />
+                <BuyPanel
+                  apiKey={apiKey}
+                  env={env}
+                  onAfterTrade={refreshData}
+                  initialData={buyFormInitialData}
+                  onClearInitialData={() => setBuyFormInitialData(null)}
+                />
               )}
 
               {activeTab === "sell" && (
@@ -1673,9 +1712,18 @@ export default function Dashboard() {
               {activeTab === "discover" && (
                 <DexScreener
                   onQuickTrade={(tokenData) => {
-                    // Pre-fill buy form and switch to buy tab
+                    // Map the chain from DexScreener to Dashboard format
+                    const mappedChain = mapDexChainToDashboard(tokenData.chain);
+
+                    // Pre-fill buy form data
+                    setBuyFormInitialData({
+                      toToken: tokenData.address,
+                      toChain: mappedChain,
+                      fromChain: mappedChain,
+                    });
+
+                    // Switch to buy tab
                     setActiveTab("buy");
-                    // You can add logic here to pre-fill the buy form
                     showSuccess(`Ready to buy ${tokenData.token}!`);
                   }}
                 />
