@@ -473,8 +473,9 @@ export default function DexScreener({ onQuickTrade }) {
               </div>
             </div>
           ) : (
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <table className="w-full min-w-[800px] text-xs sm:min-w-0 sm:text-sm">
+            <>
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <table className="w-full min-w-[800px] text-xs sm:min-w-0 sm:text-sm">
                 <thead>
                   <tr className="border-b border-neutral-800/50 text-left text-xs uppercase tracking-wider text-neutral-500">
                     <th className="pb-3 pl-4 pr-2 font-semibold sm:pl-0 w-8">
@@ -707,6 +708,7 @@ export default function DexScreener({ onQuickTrade }) {
                 </button>
               </div>
             )}
+            </>
           )}
         </div>
       )}
