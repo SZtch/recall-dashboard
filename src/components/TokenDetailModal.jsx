@@ -213,7 +213,7 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
       chartRef.current = null;
     }
 
-    // Create new chart
+    // Create new chart with local timezone
     const chart = createChart(chartContainerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: '#0a0a0a' },
@@ -229,18 +229,34 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
       rightPriceScale: {
         borderColor: '#404040',
         visible: true,
+        autoScale: true,
         scaleMargins: {
-          top: 0.1,
-          bottom: 0.2,
+          top: 0.15,
+          bottom: 0.15,
         },
       },
       timeScale: {
         borderColor: '#404040',
         timeVisible: true,
         secondsVisible: false,
+        // Use local timezone instead of UTC
+        // Lightweight Charts v5 uses browser's local timezone by default
       },
       width: chartContainerRef.current.clientWidth,
       height: isFullscreen ? 500 : 280,
+      localization: {
+        // Use browser's locale for date/time formatting
+        locale: navigator.language,
+        // Format time according to local timezone
+        timeFormatter: (time) => {
+          const date = new Date(time * 1000);
+          return date.toLocaleTimeString(navigator.language, {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          });
+        },
+      },
     });
 
     chartRef.current = chart;
@@ -338,11 +354,11 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
         priceFormat: {
           type: 'volume',
         },
-        priceScaleId: '',
+        priceScaleId: 'volume', // Use separate price scale for volume
       });
       volumeSeries.priceScale().applyOptions({
         scaleMargins: {
-          top: 0.8,
+          top: 0.85,
           bottom: 0,
         },
       });
