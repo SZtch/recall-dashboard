@@ -11,6 +11,18 @@ import {
 import { showError } from "../utils/toast";
 import TokenDetailModal from "./TokenDetailModal";
 
+// Chain options
+const CHAIN_OPTIONS = [
+  { id: "all", label: "All Chains" },
+  { id: "eth", label: "Ethereum" },
+  { id: "base", label: "Base" },
+  { id: "polygon_pos", label: "Polygon" },
+  { id: "optimism", label: "Optimism" },
+  { id: "arbitrum", label: "Arbitrum" },
+  { id: "bsc", label: "BSC" },
+  { id: "solana", label: "Solana" },
+];
+
 export default function DexScreener({ onQuickTrade }) {
   const { t } = useTranslation();
 
@@ -20,6 +32,7 @@ export default function DexScreener({ onQuickTrade }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedPool, setSelectedPool] = useState(null);
+  const [selectedChain, setSelectedChain] = useState("all");
   const [sortBy, setSortBy] = useState(null); // volume24h, liquidity, priceChange
   const [sortOrder, setSortOrder] = useState("desc"); // asc, desc
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -95,6 +108,11 @@ export default function DexScreener({ onQuickTrade }) {
     // First, apply filters
     let filtered = [...pools];
 
+    // Chain filter
+    if (selectedChain !== "all") {
+      filtered = filtered.filter(pool => pool.network === selectedChain);
+    }
+
     // Volume filter
     if (filters.minVolume) {
       const minVol = parseFloat(filters.minVolume);
@@ -165,7 +183,7 @@ export default function DexScreener({ onQuickTrade }) {
     });
 
     return sorted;
-  }, [pools, sortBy, sortOrder, filters]);
+  }, [pools, sortBy, sortOrder, filters, selectedChain]);
 
   // Handle quick buy
   const handleQuickBuy = (pool) => {
@@ -233,7 +251,7 @@ export default function DexScreener({ onQuickTrade }) {
               className="w-full rounded-lg border border-neutral-700/60 bg-neutral-900/60 px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-600 outline-none transition-all duration-200 focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
             />
             <p className="mt-2 text-xs text-neutral-500">
-              Type at least 2 characters to search across all networks
+              Type at least 2 characters to search • Use chain selector to filter by network
             </p>
           </div>
 
@@ -256,6 +274,19 @@ export default function DexScreener({ onQuickTrade }) {
                 )}
               </div>
             </button>
+
+            {/* Chain Selector */}
+            <select
+              value={selectedChain}
+              onChange={(e) => setSelectedChain(e.target.value)}
+              className="rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-3 text-sm text-neutral-300 outline-none transition-all hover:bg-neutral-800"
+            >
+              {CHAIN_OPTIONS.map((chain) => (
+                <option key={chain.id} value={chain.id}>
+                  {chain.label}
+                </option>
+              ))}
+            </select>
 
             {/* Sort Dropdown */}
             <select
