@@ -9,7 +9,6 @@ import BscIcon from "../assets/chains/bsc.svg";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import ApiKeyForm from "../components/ApiKeyForm";
-import PnlChart from "../components/PnlChart";
 import ChatbotPanel from "../components/chatbot/ChatbotPanel";
 import VerifyWalletPanel from "../components/VerifyWalletPanel";
 import DexScreener from "../components/DexScreener";
@@ -1677,7 +1676,6 @@ export default function Dashboard() {
 
               {activeTab === "pnl" && (
                 <div>
-                  <PnlChart data={pnlData} />
                   {pnlData.length > 0 && (
                     <div className="mt-5 overflow-x-auto -mx-4 sm:mx-0 sm:mt-6">
                       <table className="w-full min-w-[650px] text-xs sm:min-w-0 sm:text-sm">
