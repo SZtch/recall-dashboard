@@ -48,8 +48,31 @@ export default function DexScreener({ onQuickTrade }) {
     maxLiquidity: "",
     minFDV: "",
     maxFDV: "",
-    maxAge: "", // in hours
+    minAge: "", // in hours (minimum pool age)
+    maxAge: "", // in hours (maximum pool age)
   });
+
+  // Eligibility requirements
+  const ELIGIBILITY_REQUIREMENTS = {
+    minVolume: "100000",      // $100,000 USD
+    minLiquidity: "100000",   // $100,000 USD
+    minFDV: "500000",         // $500,000 USD
+    minAge: "720",            // 720 hours (30 days minimum trading history)
+  };
+
+  // Apply eligibility filter preset
+  const applyEligibilityFilter = useCallback(() => {
+    setFilters({
+      minVolume: ELIGIBILITY_REQUIREMENTS.minVolume,
+      maxVolume: "",
+      minLiquidity: ELIGIBILITY_REQUIREMENTS.minLiquidity,
+      maxLiquidity: "",
+      minFDV: ELIGIBILITY_REQUIREMENTS.minFDV,
+      maxFDV: "",
+      minAge: ELIGIBILITY_REQUIREMENTS.minAge,
+      maxAge: "",
+    });
+  }, []);
 
   // Fetch data based on selected chain
   const fetchData = useCallback(async () => {
@@ -142,7 +165,23 @@ export default function DexScreener({ onQuickTrade }) {
       });
     }
 
-    // Age filter (max hours) - only filter pools with valid creation date
+    // Min Age filter - pool must be at least this old (for established tokens)
+    if (filters.minAge) {
+      const minAgeHours = parseFloat(filters.minAge);
+      if (!isNaN(minAgeHours)) {
+        const minAgeMs = minAgeHours * 60 * 60 * 1000;
+        const now = Date.now();
+        filtered = filtered.filter(pool => {
+          if (!pool.poolCreatedAt) return false; // Exclude if no creation date for min age
+          const createdAt = new Date(pool.poolCreatedAt).getTime();
+          if (isNaN(createdAt)) return false; // Exclude if invalid date for min age
+          const age = now - createdAt;
+          return age >= minAgeMs; // Pool must be AT LEAST this old
+        });
+      }
+    }
+
+    // Max Age filter - pool must be younger than this (for new tokens)
     if (filters.maxAge) {
       const maxAgeHours = parseFloat(filters.maxAge);
       if (!isNaN(maxAgeHours)) {
@@ -153,7 +192,7 @@ export default function DexScreener({ onQuickTrade }) {
           const createdAt = new Date(pool.poolCreatedAt).getTime();
           if (isNaN(createdAt)) return true; // Include if invalid date
           const age = now - createdAt;
-          return age <= maxAgeMs;
+          return age <= maxAgeMs; // Pool must be AT MOST this old
         });
       }
     }
@@ -229,8 +268,16 @@ export default function DexScreener({ onQuickTrade }) {
   const activeFilterCount = [
     filters.minVolume, filters.maxVolume,
     filters.minLiquidity, filters.maxLiquidity,
-    filters.minFDV, filters.maxFDV, filters.maxAge
+    filters.minFDV, filters.maxFDV, filters.minAge, filters.maxAge
   ].filter(v => v !== "").length;
+
+  // Check if eligibility filter is active
+  const isEligibilityFilterActive =
+    filters.minVolume === ELIGIBILITY_REQUIREMENTS.minVolume &&
+    filters.minLiquidity === ELIGIBILITY_REQUIREMENTS.minLiquidity &&
+    filters.minFDV === ELIGIBILITY_REQUIREMENTS.minFDV &&
+    filters.minAge === ELIGIBILITY_REQUIREMENTS.minAge &&
+    !filters.maxVolume && !filters.maxLiquidity && !filters.maxFDV && !filters.maxAge;
 
   return (
     <div className="space-y-5">
@@ -249,6 +296,18 @@ export default function DexScreener({ onQuickTrade }) {
                selectedChain === "bsc" ? "BSC" :
                selectedChain === "solana" ? "Solana" : "All Chains"}
             </span>
+            {/* Eligible Filter Button */}
+            <button
+              onClick={applyEligibilityFilter}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                isEligibilityFilterActive
+                  ? "bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/50"
+                  : "bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-300"
+              }`}
+              title="Min: $100k Vol, $100k Liq, $500k FDV, 720h trading history"
+            >
+              {isEligibilityFilterActive ? "✓ " : ""}Eligible Only
+            </button>
           </div>
 
           {/* Controls */}
@@ -545,6 +604,37 @@ export default function DexScreener({ onQuickTrade }) {
               </button>
             </div>
 
+            {/* Preset Filters */}
+            <div className="mb-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <svg className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="text-sm font-bold text-emerald-400">Trading Eligibility</h3>
+              </div>
+              <p className="mb-3 text-xs text-emerald-300/80">
+                Apply minimum requirements for eligible trading tokens:
+              </p>
+              <ul className="mb-4 space-y-1 text-xs text-emerald-300/70">
+                <li>• Minimum 24h Volume: $100,000 USD</li>
+                <li>• Minimum Liquidity: $100,000 USD</li>
+                <li>• Minimum FDV: $500,000 USD</li>
+                <li>• Minimum Trading History: 720 hours (30 days)</li>
+              </ul>
+              <button
+                onClick={() => {
+                  applyEligibilityFilter();
+                }}
+                className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
+                  isEligibilityFilterActive
+                    ? "bg-emerald-500/30 text-emerald-300 ring-1 ring-emerald-500/50"
+                    : "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                }`}
+              >
+                {isEligibilityFilterActive ? "✓ Applied" : "Apply Eligible Tokens Filter"}
+              </button>
+            </div>
+
             {/* Filter Form */}
             <div className="space-y-5">
               {/* Volume Filter */}
@@ -616,21 +706,37 @@ export default function DexScreener({ onQuickTrade }) {
                 </div>
               </div>
 
-              {/* Age Filter */}
+              {/* Age Filters */}
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-neutral-300">
-                  Max Pool Age (hours)
+                  Pool Age (hours)
                 </label>
-                <input
-                  type="number"
-                  placeholder="e.g., 24 for pools created in last 24 hours"
-                  value={filters.maxAge}
-                  onChange={(e) => setFilters(prev => ({ ...prev, maxAge: e.target.value }))}
-                  className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
-                />
-                <p className="text-xs text-neutral-500">
-                  Leave empty to show pools of any age
-                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <input
+                      type="number"
+                      placeholder="Min age (e.g., 720)"
+                      value={filters.minAge}
+                      onChange={(e) => setFilters(prev => ({ ...prev, minAge: e.target.value }))}
+                      className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                    />
+                    <p className="mt-1 text-xs text-neutral-500">
+                      For established tokens
+                    </p>
+                  </div>
+                  <div>
+                    <input
+                      type="number"
+                      placeholder="Max age (e.g., 24)"
+                      value={filters.maxAge}
+                      onChange={(e) => setFilters(prev => ({ ...prev, maxAge: e.target.value }))}
+                      className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                    />
+                    <p className="mt-1 text-xs text-neutral-500">
+                      For new pools
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -645,6 +751,7 @@ export default function DexScreener({ onQuickTrade }) {
                     maxLiquidity: "",
                     minFDV: "",
                     maxFDV: "",
+                    minAge: "",
                     maxAge: "",
                   });
                 }}
