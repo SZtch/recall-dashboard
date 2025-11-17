@@ -202,8 +202,11 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
   useEffect(() => {
     if (initialData) {
       if (initialData.toToken) setBuyToToken(initialData.toToken);
-      if (initialData.toChain) setToChain(initialData.toChain);
-      if (initialData.fromChain) setFromChain(initialData.fromChain);
+      // Set chain (both from and to will be the same due to sync effect)
+      if (initialData.fromChain) {
+        setFromChain(initialData.fromChain);
+        // toChain will be synced automatically by the effect above
+      }
 
       // Clear initial data after using it
       if (onClearInitialData) {
@@ -238,7 +241,7 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
           const toastId = showLoading("Executing buy trade...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
-            toChainKey: toChain,
+            toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
             fromToken: "USDC",
             toToken: buyToToken,
             amount: buyAmount,
@@ -261,7 +264,7 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
             const amt = Math.min(step, total - spent);
             await executeTrade(apiKey, env, competitionId, {
               fromChainKey: fromChain,
-              toChainKey: toChain,
+              toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
               fromToken: "USDC",
               toToken: batchToToken,
               amount: amt,
@@ -281,7 +284,7 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
           const toastId = showLoading("Executing token swap...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
-            toChainKey: toChain,
+            toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
             fromToken: t2tFromToken,
             toToken: t2tToToken,
             amount: t2tAmount,
@@ -714,7 +717,7 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
           const toastId = showLoading("Executing sell trade...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
-            toChainKey: toChain,
+            toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
             fromToken: sellToken,
             toToken: "USDC",
             amount: sellAmount,
@@ -737,7 +740,7 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
             const amt = Math.min(step, total - sold);
             await executeTrade(apiKey, env, competitionId, {
               fromChainKey: fromChain,
-              toChainKey: toChain,
+              toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
               fromToken: batchToken,
               toToken: "USDC",
               amount: amt,
@@ -757,7 +760,7 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
           const toastId = showLoading("Executing token swap...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
-            toChainKey: toChain,
+            toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
             fromToken: t2tFromToken,
             toToken: t2tToToken,
             amount: t2tAmount,
