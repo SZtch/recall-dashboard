@@ -184,7 +184,7 @@ function ChainSelect({ value, onChange }) {
 
 // ======================== BUY PANEL ========================
 
-function BuyPanel({ apiKey, env, onAfterTrade, initialData, onClearInitialData }) {
+function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onClearInitialData }) {
   const [mode, setMode] = useState("single");
   const [fromChain, setFromChain] = useState("solana");
   const [toChain, setToChain] = useState("solana");
@@ -672,7 +672,7 @@ function BuyPanel({ apiKey, env, onAfterTrade, initialData, onClearInitialData }
 
 // ======================== SELL PANEL ========================
 
-function SellPanel({ apiKey, env, onAfterTrade }) {
+function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
   const [mode, setMode] = useState("single");
   const [fromChain, setFromChain] = useState("solana");
   const [toChain, setToChain] = useState("solana");
@@ -1734,6 +1734,7 @@ export default function Dashboard() {
                 <BuyPanel
                   apiKey={apiKey}
                   env={env}
+                  competitionId={competitionId}
                   onAfterTrade={refreshData}
                   initialData={buyFormInitialData}
                   onClearInitialData={() => setBuyFormInitialData(null)}
@@ -1741,7 +1742,7 @@ export default function Dashboard() {
               )}
 
               {activeTab === "sell" && (
-                <SellPanel apiKey={apiKey} env={env} onAfterTrade={refreshData} />
+                <SellPanel apiKey={apiKey} env={env} competitionId={competitionId} onAfterTrade={refreshData} />
               )}
 
               {activeTab === "verify" && (
