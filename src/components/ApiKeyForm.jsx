@@ -4,6 +4,7 @@ export default function ApiKeyForm({ onConnect }) {
   const [agent, setAgent] = useState("");
   const [recallKey, setRecallKey] = useState("");
   const [env, setEnv] = useState("sandbox");
+  const [competitionId, setCompetitionId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -19,13 +20,15 @@ export default function ApiKeyForm({ onConnect }) {
       setError("Recall API key is required.");
       return;
     }
+    if (env === "competitions" && !competitionId.trim()) {
+      setError("Competition ID is required for Production environment.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      // NOTE:
-      // onConnect bisa kamu definisikan sebagai:
-      // async function onConnect(agentName, recallApiKey, env) { ... }
-      await onConnect(agent.trim(), recallKey.trim(), env);
+      // Pass competition ID as 4th parameter
+      await onConnect(agent.trim(), recallKey.trim(), env, competitionId.trim() || null);
     } finally {
       setIsSubmitting(false);
     }
@@ -116,11 +119,47 @@ export default function ApiKeyForm({ onConnect }) {
             className="w-full cursor-pointer rounded-lg border border-neutral-700/70 bg-neutral-800/70 px-3 py-2.5 text-sm text-neutral-100 outline-none transition-all duration-200 focus:border-neutral-600 focus:bg-neutral-800/90 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3.5"
           >
             <option value="sandbox">Sandbox</option>
-            {/* kalau memang nilai untuk kompetisi adalah "competitions",
-                biarkan seperti ini */}
             <option value="competitions">Production</option>
           </select>
         </div>
+
+        {/* Competition ID - Only show for Production */}
+        {env === "competitions" && (
+          <div className="space-y-2">
+            <label
+              htmlFor="competition-id"
+              className="block text-xs font-semibold tracking-wide text-neutral-300"
+            >
+              Competition ID
+              <span className="ml-1 text-red-400">*</span>
+            </label>
+            <input
+              id="competition-id"
+              type="text"
+              placeholder="Enter competition ID..."
+              value={competitionId}
+              onChange={(e) => setCompetitionId(e.target.value)}
+              disabled={isSubmitting}
+              className="w-full rounded-lg border border-neutral-700/70 bg-neutral-800/70 px-3 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 outline-none transition-all duration-200 focus:border-neutral-600 focus:bg-neutral-800/90 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3.5"
+            />
+            <p className="flex items-center gap-1.5 text-[10px] text-neutral-500">
+              <svg
+                className="h-3 w-3"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Required for production competitions
+            </p>
+          </div>
+        )}
 
         {/* Error message (jika ada) */}
         {error && (

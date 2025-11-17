@@ -233,7 +233,7 @@ function BuyPanel({ apiKey, env, onAfterTrade, initialData, onClearInitialData }
           return;
         } else {
           const toastId = showLoading("Executing buy trade...");
-          await executeTrade(apiKey, env, {
+          await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
             toChainKey: toChain,
             fromToken: "USDC",
@@ -256,7 +256,7 @@ function BuyPanel({ apiKey, env, onAfterTrade, initialData, onClearInitialData }
           let spent = 0;
           while (spent + 1e-12 < total) {
             const amt = Math.min(step, total - spent);
-            await executeTrade(apiKey, env, {
+            await executeTrade(apiKey, env, competitionId, {
               fromChainKey: fromChain,
               toChainKey: toChain,
               fromToken: "USDC",
@@ -276,7 +276,7 @@ function BuyPanel({ apiKey, env, onAfterTrade, initialData, onClearInitialData }
           return;
         } else {
           const toastId = showLoading("Executing token swap...");
-          await executeTrade(apiKey, env, {
+          await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
             toChainKey: toChain,
             fromToken: t2tFromToken,
@@ -707,7 +707,7 @@ function SellPanel({ apiKey, env, onAfterTrade }) {
           return;
         } else {
           const toastId = showLoading("Executing sell trade...");
-          await executeTrade(apiKey, env, {
+          await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
             toChainKey: toChain,
             fromToken: sellToken,
@@ -730,7 +730,7 @@ function SellPanel({ apiKey, env, onAfterTrade }) {
           let sold = 0;
           while (sold + 1e-12 < total) {
             const amt = Math.min(step, total - sold);
-            await executeTrade(apiKey, env, {
+            await executeTrade(apiKey, env, competitionId, {
               fromChainKey: fromChain,
               toChainKey: toChain,
               fromToken: batchToken,
@@ -750,7 +750,7 @@ function SellPanel({ apiKey, env, onAfterTrade }) {
           return;
         } else {
           const toastId = showLoading("Executing token swap...");
-          await executeTrade(apiKey, env, {
+          await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
             toChainKey: toChain,
             fromToken: t2tFromToken,
@@ -1153,6 +1153,7 @@ export default function Dashboard() {
   const [agentName, setAgentName] = useState(null);
   const [apiKey, setApiKey] = useState(null);
   const [env, setEnv] = useState("sandbox");
+  const [competitionId, setCompetitionId] = useState(null);
   const [balances, setBalances] = useState(null);
   const [history, setHistory] = useState(null);
   const [pnlData, setPnlData] = useState([]);
@@ -1174,7 +1175,7 @@ export default function Dashboard() {
     if (stored) {
       try {
         if (stored.agentName && stored.apiKey && stored.env) {
-          connect(stored.agentName, stored.apiKey, stored.env, { fromStorage: true });
+          connect(stored.agentName, stored.apiKey, stored.env, stored.competitionId || null, { fromStorage: true });
         }
       } catch {
         // ignore
@@ -1187,23 +1188,29 @@ export default function Dashboard() {
     }
   }, []);
 
-  async function connect(agent, key, environment, opts = {}) {
+  async function connect(agent, key, environment, compId = null, opts = {}) {
     setAgentName(agent);
     setApiKey(key);
     setEnv(environment);
+    setCompetitionId(compId);
 
     try {
       setLoading(true);
       setErrorMsg("");
 
       if (!opts.fromStorage) {
-        secureSet("recallSession", { agentName: agent, apiKey: key, env: environment });
+        secureSet("recallSession", {
+          agentName: agent,
+          apiKey: key,
+          env: environment,
+          competitionId: compId
+        });
       }
 
       const [bal, his, pnl] = await Promise.all([
-        getBalances(key, environment),
-        getHistory(key, environment),
-        getPnlUnrealized(key, environment),
+        getBalances(key, environment, compId),
+        getHistory(key, environment, compId),
+        getPnlUnrealized(key, environment, compId),
       ]);
 
       setBalances(bal);
@@ -1224,9 +1231,9 @@ export default function Dashboard() {
     try {
       setRefreshing(true);
       const [bal, his, pnl] = await Promise.all([
-        getBalances(apiKey, env),
-        getHistory(apiKey, env),
-        getPnlUnrealized(apiKey, env),
+        getBalances(apiKey, env, competitionId),
+        getHistory(apiKey, env, competitionId),
+        getPnlUnrealized(apiKey, env, competitionId),
       ]);
       setBalances(bal);
       setHistory(his);
