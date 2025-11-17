@@ -88,10 +88,15 @@ async function fetchWithProxy(url, options = {}) {
  * Get balances from Recall API
  * Used in Dashboard -> Balances tab
  */
-export async function getBalances(apiKey, env) {
+export async function getBalances(apiKey, env, competitionId = null) {
   const baseUrl = getBaseUrl(env);
 
-  const resp = await fetchWithProxy(`${baseUrl}/api/agent/balances`, {
+  // Add competition_id query parameter if provided
+  const url = competitionId
+    ? `${baseUrl}/api/agent/balances?competition_id=${encodeURIComponent(competitionId)}`
+    : `${baseUrl}/api/agent/balances`;
+
+  const resp = await fetchWithProxy(url, {
     method: "GET",
     headers: buildHeaders(apiKey),
   });
@@ -111,10 +116,15 @@ export async function getBalances(apiKey, env) {
  * Get trade history from Recall API
  * Used in Dashboard -> History tab
  */
-export async function getHistory(apiKey, env) {
+export async function getHistory(apiKey, env, competitionId = null) {
   const baseUrl = getBaseUrl(env);
 
-  const resp = await fetchWithProxy(`${baseUrl}/api/agent/trades`, {
+  // Add competition_id query parameter if provided
+  const url = competitionId
+    ? `${baseUrl}/api/agent/trades?competition_id=${encodeURIComponent(competitionId)}`
+    : `${baseUrl}/api/agent/trades`;
+
+  const resp = await fetchWithProxy(url, {
     method: "GET",
     headers: buildHeaders(apiKey),
   });
@@ -139,11 +149,16 @@ export async function getHistory(apiKey, env) {
  * 1) Coba panggil endpoint eksperimental /api/agent/pnl/unrealized
  * 2) Kalau gagal, fallback ke [] supaya UI tetap jalan (PnL tab kosong saja)
  */
-export async function getPnlUnrealized(apiKey, env) {
+export async function getPnlUnrealized(apiKey, env, competitionId = null) {
   const baseUrl = getBaseUrl(env);
 
   try {
-    const resp = await fetchWithProxy(`${baseUrl}/api/agent/pnl/unrealized`, {
+    // Add competition_id query parameter if provided
+    const url = competitionId
+      ? `${baseUrl}/api/agent/pnl/unrealized?competition_id=${encodeURIComponent(competitionId)}`
+      : `${baseUrl}/api/agent/pnl/unrealized`;
+
+    const resp = await fetchWithProxy(url, {
       method: "GET",
       headers: buildHeaders(apiKey),
     });
@@ -194,7 +209,7 @@ export async function getPnlUnrealized(apiKey, env) {
  * POST /api/trade/execute
  * body minimal: { fromToken, toToken, amount, reason }
  */
-export async function executeTrade(apiKey, env, payload) {
+export async function executeTrade(apiKey, env, competitionId = null, payload) {
   const baseUrl = getBaseUrl(env);
 
   // Kita hanya kirim field yang memang dipakai Recall API
@@ -203,6 +218,8 @@ export async function executeTrade(apiKey, env, payload) {
     toToken: payload.toToken,
     amount: Number(payload.amount),
     reason: payload.reason || "TRADE",
+    // Add competition_id to body if provided
+    ...(competitionId && { competition_id: competitionId }),
     // Kalau nanti Recall menambah dukungan chain routing,
     // kamu bisa tambahkan:
     // fromChainKey: payload.fromChainKey,
