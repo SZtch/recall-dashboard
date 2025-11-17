@@ -11,6 +11,7 @@ import {
   getPriceChangeColor,
 } from "../api/dexscreener";
 import { showError } from "../utils/toast";
+import TokenDetailModal from "./TokenDetailModal";
 
 // Chain options matching the dashboard
 const CHAIN_OPTIONS = [
@@ -33,6 +34,7 @@ export default function DexScreener({ onQuickTrade }) {
   const [pools, setPools] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedPool, setSelectedPool] = useState(null);
 
   // Fetch data based on mode
   const fetchData = useCallback(async () => {
@@ -269,7 +271,8 @@ export default function DexScreener({ onQuickTrade }) {
                   {pools.map((pool, idx) => (
                     <tr
                       key={pool.id || idx}
-                      className="group transition-colors hover:bg-neutral-800/20"
+                      className="group cursor-pointer transition-colors hover:bg-neutral-800/20"
+                      onClick={() => setSelectedPool(pool)}
                     >
                       <td className="py-3 pl-4 pr-3 sm:pl-0">
                         <div>
@@ -306,7 +309,10 @@ export default function DexScreener({ onQuickTrade }) {
                       </td>
                       <td className="px-3 py-3 pr-4 sm:pr-0">
                         <button
-                          onClick={() => handleQuickBuy(pool)}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent row click
+                            handleQuickBuy(pool);
+                          }}
                           className="rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-400 transition-all hover:bg-emerald-500/20 hover:text-emerald-300 active:scale-95"
                         >
                           Quick Buy
@@ -326,6 +332,34 @@ export default function DexScreener({ onQuickTrade }) {
         <div className="text-center text-xs text-neutral-500">
           Showing {pools.length} pool{pools.length !== 1 ? "s" : ""}
         </div>
+      )}
+
+      {/* Token Detail Modal */}
+      {selectedPool && (
+        <TokenDetailModal
+          pool={selectedPool}
+          onClose={() => setSelectedPool(null)}
+          onBuy={(pool) => {
+            if (onQuickTrade) {
+              onQuickTrade({
+                token: pool.baseToken.symbol,
+                address: pool.baseToken.address,
+                chain: pool.network,
+              });
+            }
+          }}
+          onSell={(pool) => {
+            // Could add a quick sell handler here too
+            if (onQuickTrade) {
+              onQuickTrade({
+                token: pool.baseToken.symbol,
+                address: pool.baseToken.address,
+                chain: pool.network,
+                action: 'sell',
+              });
+            }
+          }}
+        />
       )}
     </div>
   );

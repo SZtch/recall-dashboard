@@ -194,6 +194,54 @@ export async function getPoolDetails(chainKey, poolAddress) {
 }
 
 /**
+ * Get OHLCV (candlestick) data for a pool
+ * @param {string} network - Network ID (e.g., 'eth', 'base')
+ * @param {string} poolAddress - Pool address
+ * @param {string} timeframe - Timeframe: 'day', 'hour', 'minute'
+ * @param {number} limit - Number of candles (max 1000)
+ * @returns {Promise<Array>} OHLCV data
+ */
+export async function getPoolOHLCV(network, poolAddress, timeframe = 'hour', limit = 100) {
+  try {
+    const url = `${GECKOTERMINAL_API}/networks/${network}/pools/${poolAddress}/ohlcv/${timeframe}?limit=${limit}`;
+
+    console.log('[DexScreener] Fetching OHLCV:', url);
+
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[DexScreener] OHLCV failed:', response.status, errorText);
+      throw new Error(`Failed to fetch OHLCV: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('[DexScreener] OHLCV response:', data);
+
+    if (!data.data || !data.data.attributes || !data.data.attributes.ohlcv_list) {
+      return [];
+    }
+
+    // Transform OHLCV data to chart format
+    return data.data.attributes.ohlcv_list.map(candle => ({
+      timestamp: candle[0] * 1000, // Convert to milliseconds
+      open: parseFloat(candle[1]),
+      high: parseFloat(candle[2]),
+      low: parseFloat(candle[3]),
+      close: parseFloat(candle[4]),
+      volume: parseFloat(candle[5]),
+    }));
+  } catch (error) {
+    console.error("[DexScreener] Error fetching OHLCV:", error);
+    return [];
+  }
+}
+
+/**
  * Check if a string is a contract address (hex string starting with 0x)
  */
 function isContractAddress(str) {
