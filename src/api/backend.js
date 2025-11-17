@@ -198,6 +198,23 @@ export async function getPnlUnrealized(apiKey, env, competitionId = null) {
 }
 
 /**
+ * Map frontend chain identifiers to API-expected format
+ * Frontend uses full names like "ethereum", but API might expect short codes like "eth"
+ */
+function mapChainForAPI(chainId) {
+  const mapping = {
+    'solana': 'solana',
+    'ethereum': 'eth',
+    'base': 'base',
+    'polygon': 'polygon',
+    'optimism': 'optimism',
+    'arbitrum': 'arbitrum',
+    'bsc': 'bsc',
+  };
+  return mapping[chainId] || chainId;
+}
+
+/**
  * Execute trade via Recall API
  * Dipakai di BuyPanel dan SellPanel
  *
@@ -218,6 +235,10 @@ export async function getPnlUnrealized(apiKey, env, competitionId = null) {
 export async function executeTrade(apiKey, env, competitionId = null, payload) {
   const baseUrl = getBaseUrl(env);
 
+  // Map chain identifiers to API format (e.g., "ethereum" -> "eth")
+  const fromChain = mapChainForAPI(payload.fromChainKey || "solana");
+  const toChain = mapChainForAPI(payload.toChainKey || "solana");
+
   // Kita hanya kirim field yang memang dipakai Recall API
   const body = {
     fromToken: payload.fromToken,
@@ -227,14 +248,16 @@ export async function executeTrade(apiKey, env, competitionId = null, payload) {
     // competitionId is now REQUIRED by API (always include it)
     competitionId: competitionId || null,
     // Add chain keys for same-blockchain trading (default to solana if not provided)
-    fromChainKey: payload.fromChainKey || "solana",
-    toChainKey: payload.toChainKey || "solana",
+    fromChainKey: fromChain,
+    toChainKey: toChain,
   };
 
   // Debug logging - VERY VISIBLE
   console.error("==========================================");
   console.error("🔍 TRADE REQUEST DEBUG:");
   console.error("==========================================");
+  console.error("Original chains:", payload.fromChainKey, "->", payload.toChainKey);
+  console.error("Mapped chains:", fromChain, "->", toChain);
   console.table({
     competitionId: body.competitionId,
     fromChainKey: body.fromChainKey,
