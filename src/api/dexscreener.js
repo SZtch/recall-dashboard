@@ -264,16 +264,19 @@ function extractNetwork(poolId) {
  * Format large numbers (volume, liquidity, etc)
  */
 export function formatLargeNumber(num) {
-  if (!num) return "$0";
+  // Convert to number if it's a string
+  const numValue = typeof num === 'string' ? parseFloat(num) : num;
 
-  if (num >= 1e9) {
-    return `$${(num / 1e9).toFixed(2)}B`;
-  } else if (num >= 1e6) {
-    return `$${(num / 1e6).toFixed(2)}M`;
-  } else if (num >= 1e3) {
-    return `$${(num / 1e3).toFixed(2)}K`;
+  if (!numValue || isNaN(numValue)) return "$0";
+
+  if (numValue >= 1e9) {
+    return `$${(numValue / 1e9).toFixed(2)}B`;
+  } else if (numValue >= 1e6) {
+    return `$${(numValue / 1e6).toFixed(2)}M`;
+  } else if (numValue >= 1e3) {
+    return `$${(numValue / 1e3).toFixed(2)}K`;
   } else {
-    return `$${num.toFixed(2)}`;
+    return `$${numValue.toFixed(2)}`;
   }
 }
 
@@ -282,27 +285,36 @@ export function formatLargeNumber(num) {
  */
 export function formatPriceChange(change) {
   if (change === null || change === undefined) return "N/A";
-  const sign = change >= 0 ? "+" : "";
-  return `${sign}${change.toFixed(2)}%`;
+
+  // Convert to number if it's a string
+  const numChange = typeof change === 'string' ? parseFloat(change) : change;
+
+  if (isNaN(numChange)) return "N/A";
+
+  const sign = numChange >= 0 ? "+" : "";
+  return `${sign}${numChange.toFixed(2)}%`;
 }
 
 /**
  * Format token price
  */
 export function formatTokenPrice(price) {
-  if (!price) return "$0";
+  // Convert to number if it's a string
+  const numPrice = typeof price === 'string' ? parseFloat(price) : price;
 
-  if (price >= 1000) {
-    return `$${price.toLocaleString("en-US", {
+  if (!numPrice || isNaN(numPrice)) return "$0";
+
+  if (numPrice >= 1000) {
+    return `$${numPrice.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
-  } else if (price >= 1) {
-    return `$${price.toFixed(4)}`;
-  } else if (price >= 0.0001) {
-    return `$${price.toFixed(6)}`;
+  } else if (numPrice >= 1) {
+    return `$${numPrice.toFixed(4)}`;
+  } else if (numPrice >= 0.0001) {
+    return `$${numPrice.toFixed(6)}`;
   } else {
-    return `$${price.toExponential(2)}`;
+    return `$${numPrice.toExponential(2)}`;
   }
 }
 
@@ -311,5 +323,11 @@ export function formatTokenPrice(price) {
  */
 export function getPriceChangeColor(change) {
   if (change === null || change === undefined) return "text-gray-400";
-  return change >= 0 ? "text-green-400" : "text-red-400";
+
+  // Convert to number if it's a string
+  const numChange = typeof change === 'string' ? parseFloat(change) : change;
+
+  if (isNaN(numChange)) return "text-gray-400";
+
+  return numChange >= 0 ? "text-green-400" : "text-red-400";
 }
