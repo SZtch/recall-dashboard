@@ -220,15 +220,17 @@ export async function executeTrade(apiKey, env, competitionId = null, payload) {
     reason: payload.reason || "TRADE",
     // Add competitionId to body if provided (camelCase per API spec)
     ...(competitionId && { competitionId: competitionId }),
-    // Add chain keys for same-blockchain trading
-    fromChainKey: payload.fromChainKey,
-    toChainKey: payload.toChainKey,
+    // Add chain keys for same-blockchain trading (default to solana if not provided)
+    fromChainKey: payload.fromChainKey || "solana",
+    toChainKey: payload.toChainKey || "solana",
   };
 
   // Debug logging
   console.log("🔍 Trade Request:", {
-    fromChainKey: body.fromChainKey,
-    toChainKey: body.toChainKey,
+    payload_fromChainKey: payload.fromChainKey,
+    payload_toChainKey: payload.toChainKey,
+    body_fromChainKey: body.fromChainKey,
+    body_toChainKey: body.toChainKey,
     fromToken: body.fromToken,
     toToken: body.toToken,
     amount: body.amount,
