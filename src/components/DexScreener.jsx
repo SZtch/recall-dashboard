@@ -94,47 +94,68 @@ export default function DexScreener({ onQuickTrade }) {
     // First, apply filters
     let filtered = [...pools];
 
-    // Volume filter
+    // Volume filter - only filter if value exists
     if (filters.minVolume) {
       const minVol = parseFloat(filters.minVolume);
-      filtered = filtered.filter(pool => (parseFloat(pool.volume24h) || 0) >= minVol);
+      filtered = filtered.filter(pool => {
+        const vol = parseFloat(pool.volume24h);
+        return !isNaN(vol) && vol >= minVol;
+      });
     }
     if (filters.maxVolume) {
       const maxVol = parseFloat(filters.maxVolume);
-      filtered = filtered.filter(pool => (parseFloat(pool.volume24h) || 0) <= maxVol);
+      filtered = filtered.filter(pool => {
+        const vol = parseFloat(pool.volume24h);
+        return !isNaN(vol) && vol <= maxVol;
+      });
     }
 
-    // Liquidity filter
+    // Liquidity filter - only filter if value exists
     if (filters.minLiquidity) {
       const minLiq = parseFloat(filters.minLiquidity);
-      filtered = filtered.filter(pool => (parseFloat(pool.liquidity) || 0) >= minLiq);
+      filtered = filtered.filter(pool => {
+        const liq = parseFloat(pool.liquidity);
+        return !isNaN(liq) && liq >= minLiq;
+      });
     }
     if (filters.maxLiquidity) {
       const maxLiq = parseFloat(filters.maxLiquidity);
-      filtered = filtered.filter(pool => (parseFloat(pool.liquidity) || 0) <= maxLiq);
+      filtered = filtered.filter(pool => {
+        const liq = parseFloat(pool.liquidity);
+        return !isNaN(liq) && liq <= maxLiq;
+      });
     }
 
-    // FDV filter
+    // FDV filter - only filter if value exists
     if (filters.minFDV) {
       const minFdv = parseFloat(filters.minFDV);
-      filtered = filtered.filter(pool => (parseFloat(pool.fdv) || 0) >= minFdv);
+      filtered = filtered.filter(pool => {
+        const fdv = parseFloat(pool.fdv);
+        return !isNaN(fdv) && fdv >= minFdv;
+      });
     }
     if (filters.maxFDV) {
       const maxFdv = parseFloat(filters.maxFDV);
-      filtered = filtered.filter(pool => (parseFloat(pool.fdv) || 0) <= maxFdv);
+      filtered = filtered.filter(pool => {
+        const fdv = parseFloat(pool.fdv);
+        return !isNaN(fdv) && fdv <= maxFdv;
+      });
     }
 
-    // Age filter (max hours)
+    // Age filter (max hours) - only filter pools with valid creation date
     if (filters.maxAge) {
       const maxAgeHours = parseFloat(filters.maxAge);
-      const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
-      const now = Date.now();
-      filtered = filtered.filter(pool => {
-        if (!pool.poolCreatedAt) return true; // Include if no creation date
-        const createdAt = new Date(pool.poolCreatedAt).getTime();
-        const age = now - createdAt;
-        return age <= maxAgeMs;
-      });
+      if (!isNaN(maxAgeHours)) {
+        const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
+        const now = Date.now();
+        filtered = filtered.filter(pool => {
+          if (!pool.poolCreatedAt) return true; // Include if no creation date
+          const createdAt = new Date(pool.poolCreatedAt).getTime();
+          if (isNaN(createdAt)) return true; // Include if invalid date
+          const age = now - createdAt;
+          return age <= maxAgeMs;
+        });
+      }
     }
 
     // Then, apply sorting
