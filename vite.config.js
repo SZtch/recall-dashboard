@@ -10,7 +10,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ["react", "react-dom"],
-          charts: ["recharts"],
           query: ["@tanstack/react-query"],
           crypto: ["crypto-js"],
           toast: ["react-hot-toast"],
