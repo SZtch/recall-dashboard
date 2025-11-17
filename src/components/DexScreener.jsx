@@ -3,8 +3,6 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   searchPools,
-  getTrendingPools,
-  getNewPools,
   formatLargeNumber,
   formatPriceChange,
   formatTokenPrice,
@@ -13,33 +11,18 @@ import {
 import { showError } from "../utils/toast";
 import TokenDetailModal from "./TokenDetailModal";
 
-// Chain options matching the dashboard
-const CHAIN_OPTIONS = [
-  { id: "ethereum", label: "Ethereum" },
-  { id: "base", label: "Base" },
-  { id: "polygon", label: "Polygon" },
-  { id: "optimism", label: "Optimism" },
-  { id: "arbitrum", label: "Arbitrum" },
-  { id: "bsc", label: "BSC" },
-  { id: "solana", label: "Solana" },
-];
-
 export default function DexScreener({ onQuickTrade }) {
   const { t } = useTranslation();
 
   // State
-  const [mode, setMode] = useState("trending"); // trending, new, search
-  const [selectedChain, setSelectedChain] = useState("ethereum");
   const [searchQuery, setSearchQuery] = useState("");
   const [pools, setPools] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [selectedPool, setSelectedPool] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
   const [sortBy, setSortBy] = useState(null); // volume24h, liquidity, priceChange
   const [sortOrder, setSortOrder] = useState("desc"); // asc, desc
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem("dex-favorites");
     return saved ? JSON.parse(saved) : [];
@@ -56,29 +39,18 @@ export default function DexScreener({ onQuickTrade }) {
     maxAge: "", // in hours
   });
 
-  // Fetch data based on mode (resets to page 1)
+  // Fetch data
   const fetchData = useCallback(async () => {
+    if (searchQuery.trim().length < 2) {
+      setPools([]);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
-      setCurrentPage(1);
-      setHasMore(true);
-      let results = [];
-
-      if (mode === "search" && searchQuery.trim().length >= 2) {
-        results = await searchPools(searchQuery);
-      } else if (mode === "trending") {
-        results = await getTrendingPools(selectedChain, 1);
-      } else if (mode === "new") {
-        results = await getNewPools(selectedChain, 1);
-      }
-
+      const results = await searchPools(searchQuery);
       setPools(results);
-
-      // If less than 20 results, there's likely no more pages
-      if (results.length < 20) {
-        setHasMore(false);
-      }
     } catch (error) {
       console.error("[DexScreener Component] Error fetching pools:", error);
       setError(error.message || "Failed to fetch pool data");
@@ -87,63 +59,20 @@ export default function DexScreener({ onQuickTrade }) {
     } finally {
       setLoading(false);
     }
-  }, [mode, selectedChain, searchQuery]);
-
-  // Load more data (next page)
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore || mode === "search") return;
-
-    try {
-      setLoadingMore(true);
-      const nextPage = currentPage + 1;
-      let results = [];
-
-      if (mode === "trending") {
-        results = await getTrendingPools(selectedChain, nextPage);
-      } else if (mode === "new") {
-        results = await getNewPools(selectedChain, nextPage);
-      }
-
-      if (results.length === 0) {
-        setHasMore(false);
-      } else {
-        setPools(prev => [...prev, ...results]);
-        setCurrentPage(nextPage);
-
-        // If less than 20 results, probably no more pages
-        if (results.length < 20) {
-          setHasMore(false);
-        }
-      }
-    } catch (error) {
-      console.error("[DexScreener Component] Error loading more:", error);
-      showError("Failed to load more pools");
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [mode, selectedChain, currentPage, loadingMore, hasMore]);
-
-  // Auto-fetch on mode/chain change
-  useEffect(() => {
-    if (mode === "search" && searchQuery.trim().length < 2) {
-      setPools([]);
-      return;
-    }
-    fetchData();
-  }, [fetchData, mode, searchQuery]);
+  }, [searchQuery]);
 
   // Debounced search
   useEffect(() => {
-    if (mode !== "search") return;
-
     const timer = setTimeout(() => {
       if (searchQuery.trim().length >= 2) {
         fetchData();
+      } else {
+        setPools([]);
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, mode, fetchData]);
+  }, [searchQuery, fetchData]);
 
   // Save favorites to localStorage
   useEffect(() => {
@@ -263,12 +192,16 @@ export default function DexScreener({ onQuickTrade }) {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e) => {
-      // ESC to close modal
-      if (e.key === "Escape" && selectedPool) {
-        setSelectedPool(null);
+      // ESC to close modal or filter modal
+      if (e.key === "Escape") {
+        if (selectedPool) {
+          setSelectedPool(null);
+        } else if (showFilterModal) {
+          setShowFilterModal(false);
+        }
       }
       // / to focus search
-      if (e.key === "/" && mode === "search") {
+      if (e.key === "/") {
         e.preventDefault();
         document.querySelector('input[type="text"]')?.focus();
       }
@@ -276,54 +209,59 @@ export default function DexScreener({ onQuickTrade }) {
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [selectedPool, mode]);
+  }, [selectedPool, showFilterModal]);
+
+  const activeFilterCount = [
+    filters.minVolume, filters.maxVolume,
+    filters.minLiquidity, filters.maxLiquidity,
+    filters.minFDV, filters.maxFDV, filters.maxAge
+  ].filter(v => v !== "").length;
 
   return (
     <div className="space-y-5">
       {/* Header & Controls */}
       <div className="space-y-4">
-        {/* Mode Selector & Controls Row */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setMode("trending")}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
-                mode === "trending"
-                  ? "bg-sky-500 text-black shadow-lg shadow-sky-500/30"
-                  : "bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
-              }`}
-            >
-              🔥 Trending
-            </button>
-            <button
-              onClick={() => setMode("new")}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
-                mode === "new"
-                  ? "bg-sky-500 text-black shadow-lg shadow-sky-500/30"
-                  : "bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
-              }`}
-            >
-              ✨ New Pools
-            </button>
-            <button
-              onClick={() => setMode("search")}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
-                mode === "search"
-                  ? "bg-sky-500 text-black shadow-lg shadow-sky-500/30"
-                  : "bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
-              }`}
-            >
-              🔍 Search
-            </button>
+        {/* Search Bar & Controls */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          {/* Search Input */}
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="Search tokens by name, symbol, or address..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-neutral-700/60 bg-neutral-900/60 px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-600 outline-none transition-all duration-200 focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+            />
+            <p className="mt-2 text-xs text-neutral-500">
+              Type at least 2 characters to search across all networks
+            </p>
           </div>
 
-          {/* Sort Controls */}
+          {/* Controls */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Filter Button */}
+            <button
+              onClick={() => setShowFilterModal(true)}
+              className="relative rounded-lg bg-neutral-800/50 px-4 py-3 text-sm font-semibold text-neutral-300 transition-all hover:bg-neutral-800 hover:text-neutral-100"
+            >
+              <div className="flex items-center gap-2">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                <span>Filters</span>
+                {activeFilterCount > 0 && (
+                  <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-xs font-bold text-black">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </div>
+            </button>
+
             {/* Sort Dropdown */}
             <select
               value={sortBy || ""}
               onChange={(e) => setSortBy(e.target.value || null)}
-              className="rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all hover:bg-neutral-800"
+              className="rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-3 text-sm text-neutral-300 outline-none transition-all hover:bg-neutral-800"
             >
               <option value="">Sort by...</option>
               <option value="volume24h">Volume 24h</option>
@@ -335,7 +273,7 @@ export default function DexScreener({ onQuickTrade }) {
             {sortBy && (
               <button
                 onClick={() => setSortOrder(prev => prev === "asc" ? "desc" : "asc")}
-                className="rounded-lg bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 transition-all hover:bg-neutral-800"
+                className="rounded-lg bg-neutral-800/50 px-3 py-3 text-sm text-neutral-300 transition-all hover:bg-neutral-800"
                 title={sortOrder === "asc" ? "Ascending" : "Descending"}
               >
                 {sortOrder === "asc" ? "↑" : "↓"}
@@ -343,145 +281,6 @@ export default function DexScreener({ onQuickTrade }) {
             )}
           </div>
         </div>
-
-        {/* Filters */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Volume Filter */}
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-neutral-400">Volume (USD)</label>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                placeholder="Min"
-                value={filters.minVolume}
-                onChange={(e) => setFilters(prev => ({ ...prev, minVolume: e.target.value }))}
-                className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
-              />
-              <input
-                type="number"
-                placeholder="Max"
-                value={filters.maxVolume}
-                onChange={(e) => setFilters(prev => ({ ...prev, maxVolume: e.target.value }))}
-                className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
-              />
-            </div>
-          </div>
-
-          {/* Liquidity Filter */}
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-neutral-400">Liquidity (USD)</label>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                placeholder="Min"
-                value={filters.minLiquidity}
-                onChange={(e) => setFilters(prev => ({ ...prev, minLiquidity: e.target.value }))}
-                className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
-              />
-              <input
-                type="number"
-                placeholder="Max"
-                value={filters.maxLiquidity}
-                onChange={(e) => setFilters(prev => ({ ...prev, maxLiquidity: e.target.value }))}
-                className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
-              />
-            </div>
-          </div>
-
-          {/* FDV Filter */}
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-neutral-400">FDV (USD)</label>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                placeholder="Min"
-                value={filters.minFDV}
-                onChange={(e) => setFilters(prev => ({ ...prev, minFDV: e.target.value }))}
-                className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
-              />
-              <input
-                type="number"
-                placeholder="Max"
-                value={filters.maxFDV}
-                onChange={(e) => setFilters(prev => ({ ...prev, maxFDV: e.target.value }))}
-                className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
-              />
-            </div>
-          </div>
-
-          {/* Age Filter */}
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-neutral-400">Max Age (hours)</label>
-            <input
-              type="number"
-              placeholder="e.g., 24"
-              value={filters.maxAge}
-              onChange={(e) => setFilters(prev => ({ ...prev, maxAge: e.target.value }))}
-              className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
-            />
-          </div>
-        </div>
-
-        {/* Clear Filters Button */}
-        {(filters.minVolume || filters.maxVolume || filters.minLiquidity || filters.maxLiquidity ||
-          filters.minFDV || filters.maxFDV || filters.maxAge) && (
-          <div className="flex justify-end">
-            <button
-              onClick={() => setFilters({
-                minVolume: "",
-                maxVolume: "",
-                minLiquidity: "",
-                maxLiquidity: "",
-                minFDV: "",
-                maxFDV: "",
-                maxAge: "",
-              })}
-              className="rounded-lg bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-400 transition-all hover:bg-red-500/20"
-            >
-              Clear Filters
-            </button>
-          </div>
-        )}
-
-        {/* Search Input (visible in search mode) */}
-        {mode === "search" && (
-          <div>
-            <input
-              type="text"
-              placeholder="Search by token name, symbol, or address..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-neutral-700/60 bg-neutral-900/60 px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-600 outline-none transition-all duration-200 focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
-            />
-            <p className="mt-2 text-xs text-neutral-500">
-              Type at least 2 characters to search
-            </p>
-          </div>
-        )}
-
-        {/* Chain Selector (not visible in search mode) */}
-        {mode !== "search" && (
-          <div>
-            <label className="mb-2 block text-xs font-semibold tracking-wide text-neutral-300">
-              Select Chain
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {CHAIN_OPTIONS.map((chain) => (
-                <button
-                  key={chain.id}
-                  onClick={() => setSelectedChain(chain.id)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                    selectedChain === chain.id
-                      ? "bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/50"
-                      : "bg-neutral-800/30 text-neutral-500 hover:bg-neutral-800/50 hover:text-neutral-300"
-                  }`}
-                >
-                  {chain.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Error State */}
@@ -545,14 +344,12 @@ export default function DexScreener({ onQuickTrade }) {
                   </svg>
                 </div>
                 <p className="text-sm font-medium text-neutral-400">
-                  {mode === "search"
-                    ? "No pools found"
-                    : "No pools available"}
+                  No pools found
                 </p>
                 <p className="mt-1 text-xs text-neutral-600">
-                  {mode === "search"
-                    ? "Try searching for a different token"
-                    : "Try selecting a different chain"}
+                  {searchQuery.trim().length < 2
+                    ? "Start typing to search for tokens"
+                    : "Try searching for a different token or adjust your filters"}
                 </p>
               </div>
             </div>
@@ -688,40 +485,156 @@ export default function DexScreener({ onQuickTrade }) {
         </div>
       )}
 
-      {/* Pool Count & Load More */}
+      {/* Pool Count */}
       {!loading && sortedPools.length > 0 && (
-        <div className="space-y-4">
-          <div className="text-center text-xs text-neutral-500">
-            Showing {sortedPools.length} pool{sortedPools.length !== 1 ? "s" : ""}
-            {favorites.length > 0 && ` • ${favorites.length} favorite${favorites.length !== 1 ? "s" : ""}`}
-          </div>
+        <div className="text-center text-xs text-neutral-500">
+          Showing {sortedPools.length} pool{sortedPools.length !== 1 ? "s" : ""}
+          {favorites.length > 0 && ` • ${favorites.length} favorite${favorites.length !== 1 ? "s" : ""}`}
+          {activeFilterCount > 0 && ` • ${activeFilterCount} filter${activeFilterCount !== 1 ? "s" : ""} active`}
+        </div>
+      )}
 
-          {/* Load More Button */}
-          {hasMore && mode !== "search" && (
-            <div className="flex justify-center">
+      {/* Filter Modal */}
+      {showFilterModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div
+            className="absolute inset-0"
+            onClick={() => setShowFilterModal(false)}
+          />
+          <div className="relative w-full max-w-2xl rounded-xl border border-neutral-800/50 bg-neutral-900 p-6 shadow-2xl">
+            {/* Header */}
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-neutral-100">Advanced Filters</h2>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Filter pools by volume, liquidity, FDV, and age
+                </p>
+              </div>
               <button
-                onClick={loadMore}
-                disabled={loadingMore}
-                className="rounded-lg bg-sky-500/10 px-6 py-3 text-sm font-semibold text-sky-400 transition-all hover:bg-sky-500/20 hover:text-sky-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => setShowFilterModal(false)}
+                className="rounded-lg p-2 text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-100"
               >
-                {loadingMore ? (
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />
-                    <span>Loading...</span>
-                  </div>
-                ) : (
-                  `Load More Pools (Page ${currentPage + 1})`
-                )}
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-          )}
 
-          {/* No More Pools Message */}
-          {!hasMore && mode !== "search" && pools.length >= 20 && (
-            <div className="text-center text-xs text-neutral-600">
-              No more pools to load
+            {/* Filter Form */}
+            <div className="space-y-5">
+              {/* Volume Filter */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-neutral-300">
+                  Volume 24h (USD)
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="number"
+                    placeholder="Minimum"
+                    value={filters.minVolume}
+                    onChange={(e) => setFilters(prev => ({ ...prev, minVolume: e.target.value }))}
+                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Maximum"
+                    value={filters.maxVolume}
+                    onChange={(e) => setFilters(prev => ({ ...prev, maxVolume: e.target.value }))}
+                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                  />
+                </div>
+              </div>
+
+              {/* Liquidity Filter */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-neutral-300">
+                  Liquidity (USD)
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="number"
+                    placeholder="Minimum"
+                    value={filters.minLiquidity}
+                    onChange={(e) => setFilters(prev => ({ ...prev, minLiquidity: e.target.value }))}
+                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Maximum"
+                    value={filters.maxLiquidity}
+                    onChange={(e) => setFilters(prev => ({ ...prev, maxLiquidity: e.target.value }))}
+                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                  />
+                </div>
+              </div>
+
+              {/* FDV Filter */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-neutral-300">
+                  Fully Diluted Valuation (USD)
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="number"
+                    placeholder="Minimum"
+                    value={filters.minFDV}
+                    onChange={(e) => setFilters(prev => ({ ...prev, minFDV: e.target.value }))}
+                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Maximum"
+                    value={filters.maxFDV}
+                    onChange={(e) => setFilters(prev => ({ ...prev, maxFDV: e.target.value }))}
+                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                  />
+                </div>
+              </div>
+
+              {/* Age Filter */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-neutral-300">
+                  Max Pool Age (hours)
+                </label>
+                <input
+                  type="number"
+                  placeholder="e.g., 24 for pools created in last 24 hours"
+                  value={filters.maxAge}
+                  onChange={(e) => setFilters(prev => ({ ...prev, maxAge: e.target.value }))}
+                  className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                />
+                <p className="text-xs text-neutral-500">
+                  Leave empty to show pools of any age
+                </p>
+              </div>
             </div>
-          )}
+
+            {/* Actions */}
+            <div className="mt-6 flex items-center justify-between gap-3 border-t border-neutral-800/50 pt-6">
+              <button
+                onClick={() => {
+                  setFilters({
+                    minVolume: "",
+                    maxVolume: "",
+                    minLiquidity: "",
+                    maxLiquidity: "",
+                    minFDV: "",
+                    maxFDV: "",
+                    maxAge: "",
+                  });
+                }}
+                className="rounded-lg bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-400 transition-all hover:bg-red-500/20"
+              >
+                Clear All Filters
+              </button>
+              <button
+                onClick={() => setShowFilterModal(false)}
+                className="rounded-lg bg-sky-500 px-6 py-2.5 text-sm font-semibold text-black transition-all hover:bg-sky-400 active:scale-95"
+              >
+                Apply Filters
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
