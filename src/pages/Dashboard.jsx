@@ -12,7 +12,6 @@ import ApiKeyForm from "../components/ApiKeyForm";
 import PnlChart from "../components/PnlChart";
 import ChatbotPanel from "../components/chatbot/ChatbotPanel";
 import VerifyWalletPanel from "../components/VerifyWalletPanel";
-import LanguageSwitcher from "../components/LanguageSwitcher";
 import DexScreener from "../components/DexScreener";
 import {
   getBalances,
@@ -1379,7 +1378,6 @@ export default function Dashboard() {
 
             {/* Touch-friendly action buttons */}
             <div className="flex w-full items-center gap-2 sm:gap-2.5 md:w-auto">
-              <LanguageSwitcher />
               <a
                 href="https://app.recall.network/competitions"
                 target="_blank"
