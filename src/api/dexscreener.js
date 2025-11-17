@@ -194,6 +194,26 @@ export async function getPoolDetails(chainKey, poolAddress) {
 }
 
 /**
+ * Parse token symbols from pool name
+ * e.g., "WBTC / WETH 0.05%" -> ["WBTC", "WETH"]
+ */
+function parseSymbolsFromName(name) {
+  if (!name) return ["???", "???"];
+
+  // Remove fee tier info (e.g., "0.05%", "0.3%")
+  const cleanName = name.replace(/\s*\d+(\.\d+)?%\s*$/, '').trim();
+
+  // Split by "/" and clean up
+  const parts = cleanName.split('/').map(s => s.trim());
+
+  if (parts.length >= 2) {
+    return [parts[0], parts[1]];
+  }
+
+  return ["???", "???"];
+}
+
+/**
  * Transform GeckoTerminal pool data to our format
  */
 function transformPool(pool) {
@@ -204,20 +224,23 @@ function transformPool(pool) {
   const baseToken = relationships.base_token?.data || {};
   const quoteToken = relationships.quote_token?.data || {};
 
+  // Parse symbols from name as fallback
+  const [baseSymbolFromName, quoteSymbolFromName] = parseSymbolsFromName(attrs.name);
+
   return {
     id: pool.id,
     address: attrs.address,
     name: attrs.name,
     network: extractNetwork(pool.id),
 
-    // Token info
+    // Token info - use name parsing as fallback
     baseToken: {
-      symbol: attrs.base_token_symbol || baseToken.symbol || "???",
+      symbol: baseToken.id?.split('_').pop()?.toUpperCase() || baseSymbolFromName,
       address: attrs.base_token_address || baseToken.address,
       name: attrs.base_token_name || baseToken.name,
     },
     quoteToken: {
-      symbol: attrs.quote_token_symbol || quoteToken.symbol || "???",
+      symbol: quoteToken.id?.split('_').pop()?.toUpperCase() || quoteSymbolFromName,
       address: attrs.quote_token_address || quoteToken.address,
       name: attrs.quote_token_name || quoteToken.name,
     },
