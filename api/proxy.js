@@ -1,4 +1,12 @@
 // api/proxy.js - Vercel Serverless Function to proxy Recall API requests
+
+// Disable body parsing so we can handle it manually
+export const config = {
+  api: {
+    bodyParser: true, // Enable automatic body parsing
+  },
+};
+
 export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -16,12 +24,17 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('Request method:', req.method);
+    console.log('Request body:', JSON.stringify(req.body));
+    console.log('Request body type:', typeof req.body);
+
     // Ensure we have a body
     if (!req.body || typeof req.body !== 'object') {
       console.error('Invalid request body:', req.body);
       return res.status(400).json({
         error: 'Invalid request body',
-        received: typeof req.body
+        received: typeof req.body,
+        rawBody: req.body
       });
     }
 
