@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   searchPools,
+  getTrendingPools,
   formatLargeNumber,
   formatPriceChange,
   formatTokenPrice,
@@ -13,7 +14,6 @@ import TokenDetailModal from "./TokenDetailModal";
 
 // Chain options
 const CHAIN_OPTIONS = [
-  { id: "all", label: "All Chains" },
   { id: "eth", label: "Ethereum" },
   { id: "base", label: "Base" },
   { id: "polygon_pos", label: "Polygon" },
@@ -27,12 +27,11 @@ export default function DexScreener({ onQuickTrade }) {
   const { t } = useTranslation();
 
   // State
-  const [searchQuery, setSearchQuery] = useState("");
   const [pools, setPools] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedPool, setSelectedPool] = useState(null);
-  const [selectedChain, setSelectedChain] = useState("all");
+  const [selectedChain, setSelectedChain] = useState("eth");
   const [sortBy, setSortBy] = useState(null); // volume24h, liquidity, priceChange
   const [sortOrder, setSortOrder] = useState("desc"); // asc, desc
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -52,17 +51,12 @@ export default function DexScreener({ onQuickTrade }) {
     maxAge: "", // in hours
   });
 
-  // Fetch data
+  // Fetch data based on selected chain
   const fetchData = useCallback(async () => {
-    if (searchQuery.trim().length < 2) {
-      setPools([]);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
-      const results = await searchPools(searchQuery);
+      const results = await getTrendingPools(selectedChain, 1);
       setPools(results);
     } catch (error) {
       console.error("[DexScreener Component] Error fetching pools:", error);
@@ -72,20 +66,12 @@ export default function DexScreener({ onQuickTrade }) {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery]);
+  }, [selectedChain]);
 
-  // Debounced search
+  // Auto-fetch when chain changes
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchQuery.trim().length >= 2) {
-        fetchData();
-      } else {
-        setPools([]);
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery, fetchData]);
+    fetchData();
+  }, [fetchData]);
 
   // Save favorites to localStorage
   useEffect(() => {
@@ -107,11 +93,6 @@ export default function DexScreener({ onQuickTrade }) {
   const sortedPools = useMemo(() => {
     // First, apply filters
     let filtered = [...pools];
-
-    // Chain filter
-    if (selectedChain !== "all") {
-      filtered = filtered.filter(pool => pool.network === selectedChain);
-    }
 
     // Volume filter
     if (filters.minVolume) {
@@ -183,7 +164,7 @@ export default function DexScreener({ onQuickTrade }) {
     });
 
     return sorted;
-  }, [pools, sortBy, sortOrder, filters, selectedChain]);
+  }, [pools, sortBy, sortOrder, filters]);
 
   // Handle quick buy
   const handleQuickBuy = (pool) => {
@@ -218,11 +199,6 @@ export default function DexScreener({ onQuickTrade }) {
           setShowFilterModal(false);
         }
       }
-      // / to focus search
-      if (e.key === "/") {
-        e.preventDefault();
-        document.querySelector('input[type="text"]')?.focus();
-      }
     };
 
     window.addEventListener("keydown", handleKeyPress);
@@ -239,20 +215,19 @@ export default function DexScreener({ onQuickTrade }) {
     <div className="space-y-5">
       {/* Header & Controls */}
       <div className="space-y-4">
-        {/* Search Bar & Controls */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          {/* Search Input */}
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Search tokens by name, symbol, or address..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-neutral-700/60 bg-neutral-900/60 px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-600 outline-none transition-all duration-200 focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
-            />
-            <p className="mt-2 text-xs text-neutral-500">
-              Type at least 2 characters to search • Use chain selector to filter by network
-            </p>
+        {/* Controls Row */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold text-neutral-100">Trending Pools</h2>
+            <span className="rounded-full bg-neutral-800/50 px-2 py-1 text-xs text-neutral-400">
+              {selectedChain === "eth" ? "Ethereum" :
+               selectedChain === "base" ? "Base" :
+               selectedChain === "polygon_pos" ? "Polygon" :
+               selectedChain === "optimism" ? "Optimism" :
+               selectedChain === "arbitrum" ? "Arbitrum" :
+               selectedChain === "bsc" ? "BSC" :
+               selectedChain === "solana" ? "Solana" : "All Chains"}
+            </span>
           </div>
 
           {/* Controls */}
@@ -378,9 +353,7 @@ export default function DexScreener({ onQuickTrade }) {
                   No pools found
                 </p>
                 <p className="mt-1 text-xs text-neutral-600">
-                  {searchQuery.trim().length < 2
-                    ? "Start typing to search for tokens"
-                    : "Try searching for a different token or adjust your filters"}
+                  Try selecting a different chain or adjust your filters
                 </p>
               </div>
             </div>
