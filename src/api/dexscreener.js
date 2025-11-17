@@ -194,23 +194,39 @@ export async function getPoolDetails(chainKey, poolAddress) {
 }
 
 /**
+ * Check if a string is a contract address (hex string starting with 0x)
+ */
+function isContractAddress(str) {
+  if (!str) return false;
+  return str.toLowerCase().startsWith('0x') && str.length > 10;
+}
+
+/**
  * Parse token symbols from pool name
  * e.g., "WBTC / WETH 0.05%" -> ["WBTC", "WETH"]
  */
 function parseSymbolsFromName(name) {
-  if (!name) return ["???", "???"];
+  if (!name) return null;
 
-  // Remove fee tier info (e.g., "0.05%", "0.3%")
+  // Remove fee tier info (e.g., "0.05%", "0.3%", "1%")
   const cleanName = name.replace(/\s*\d+(\.\d+)?%\s*$/, '').trim();
 
   // Split by "/" and clean up
   const parts = cleanName.split('/').map(s => s.trim());
 
   if (parts.length >= 2) {
-    return [parts[0], parts[1]];
+    const baseSymbol = parts[0];
+    const quoteSymbol = parts[1];
+
+    // Don't use if they look like addresses
+    if (isContractAddress(baseSymbol) || isContractAddress(quoteSymbol)) {
+      return null;
+    }
+
+    return [baseSymbol, quoteSymbol];
   }
 
-  return ["???", "???"];
+  return null;
 }
 
 /**
@@ -224,8 +240,29 @@ function transformPool(pool) {
   const baseToken = relationships.base_token?.data || {};
   const quoteToken = relationships.quote_token?.data || {};
 
-  // Parse symbols from name as fallback
-  const [baseSymbolFromName, quoteSymbolFromName] = parseSymbolsFromName(attrs.name);
+  // Parse symbols from name (PRIMARY SOURCE)
+  const symbolsFromName = parseSymbolsFromName(attrs.name);
+
+  // Get symbols with smart fallback
+  let baseSymbol = "???";
+  let quoteSymbol = "???";
+
+  if (symbolsFromName) {
+    // Use parsed symbols from name (e.g., "PEPE / WETH" -> "PEPE", "WETH")
+    baseSymbol = symbolsFromName[0];
+    quoteSymbol = symbolsFromName[1];
+  } else {
+    // Fallback: try to extract from token ID, but validate
+    const baseFromId = baseToken.id?.split('_').pop()?.toUpperCase();
+    const quoteFromId = quoteToken.id?.split('_').pop()?.toUpperCase();
+
+    if (baseFromId && !isContractAddress(baseFromId)) {
+      baseSymbol = baseFromId;
+    }
+    if (quoteFromId && !isContractAddress(quoteFromId)) {
+      quoteSymbol = quoteFromId;
+    }
+  }
 
   return {
     id: pool.id,
@@ -233,14 +270,14 @@ function transformPool(pool) {
     name: attrs.name,
     network: extractNetwork(pool.id),
 
-    // Token info - use name parsing as fallback
+    // Token info with clean symbols
     baseToken: {
-      symbol: baseToken.id?.split('_').pop()?.toUpperCase() || baseSymbolFromName,
+      symbol: baseSymbol,
       address: attrs.base_token_address || baseToken.address,
       name: attrs.base_token_name || baseToken.name,
     },
     quoteToken: {
-      symbol: quoteToken.id?.split('_').pop()?.toUpperCase() || quoteSymbolFromName,
+      symbol: quoteSymbol,
       address: attrs.quote_token_address || quoteToken.address,
       name: attrs.quote_token_name || quoteToken.name,
     },
