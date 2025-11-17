@@ -194,6 +194,11 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
   const [buyAmount, setBuyAmount] = useState("");
   const [buyReason, setBuyReason] = useState("");
 
+  // Sync toChain with fromChain (cross-chain trading is disabled)
+  useEffect(() => {
+    setToChain(fromChain);
+  }, [fromChain]);
+
   // Pre-fill form when initialData is provided
   useEffect(() => {
     if (initialData) {
@@ -691,6 +696,11 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
   const [t2tToToken, setT2tToToken] = useState("");
   const [t2tAmount, setT2tAmount] = useState("");
   const [t2tReason, setT2tReason] = useState("");
+
+  // Sync toChain with fromChain (cross-chain trading is disabled)
+  useEffect(() => {
+    setToChain(fromChain);
+  }, [fromChain]);
 
   async function handleSubmit(e) {
     e.preventDefault();
