@@ -37,8 +37,6 @@ export async function searchPools(query) {
       return [];
     }
 
-    console.log('[DexScreener] Searching pools for:', query);
-
     const response = await fetch(
       `${GECKOTERMINAL_API}/search/pools?query=${encodeURIComponent(query)}`,
       {
@@ -50,22 +48,18 @@ export async function searchPools(query) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[DexScreener] Search failed:', response.status, errorText);
       throw new Error(`Search failed: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('[DexScreener] Search response:', data);
 
     // GeckoTerminal returns: { data: [...pools] }
     if (!data.data || !Array.isArray(data.data)) {
-      console.warn('[DexScreener] No data in response');
       return [];
     }
 
     // Transform to our format
     const pools = data.data.map(transformPool);
-    console.log('[DexScreener] Transformed pools:', pools.length);
     return pools;
   } catch (error) {
     console.error("[DexScreener] Error searching pools:", error);
@@ -84,9 +78,6 @@ export async function getTrendingPools(chainKey = "ethereum", page = 1) {
     const networkId = getNetworkId(chainKey);
     const url = `${GECKOTERMINAL_API}/networks/${networkId}/trending_pools?page=${page}`;
 
-    console.log('[DexScreener] Fetching trending pools:', chainKey, '->', networkId, 'page:', page);
-    console.log('[DexScreener] URL:', url);
-
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",
@@ -95,20 +86,16 @@ export async function getTrendingPools(chainKey = "ethereum", page = 1) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[DexScreener] Trending pools failed:', response.status, errorText);
       throw new Error(`Failed to fetch trending pools: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('[DexScreener] Trending response:', data);
 
     if (!data.data || !Array.isArray(data.data)) {
-      console.warn('[DexScreener] No trending data');
       return [];
     }
 
     const pools = data.data.map(transformPool);
-    console.log('[DexScreener] Trending pools count:', pools.length);
     return pools;
   } catch (error) {
     console.error("[DexScreener] Error fetching trending pools:", error);
@@ -127,9 +114,6 @@ export async function getNewPools(chainKey = "ethereum", page = 1) {
     const networkId = getNetworkId(chainKey);
     const url = `${GECKOTERMINAL_API}/networks/${networkId}/new_pools?page=${page}`;
 
-    console.log('[DexScreener] Fetching new pools:', chainKey, '->', networkId, 'page:', page);
-    console.log('[DexScreener] URL:', url);
-
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",
@@ -138,20 +122,16 @@ export async function getNewPools(chainKey = "ethereum", page = 1) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[DexScreener] New pools failed:', response.status, errorText);
       throw new Error(`Failed to fetch new pools: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('[DexScreener] New pools response:', data);
 
     if (!data.data || !Array.isArray(data.data)) {
-      console.warn('[DexScreener] No new pools data');
       return [];
     }
 
     const pools = data.data.map(transformPool);
-    console.log('[DexScreener] New pools count:', pools.length);
     return pools;
   } catch (error) {
     console.error("[DexScreener] Error fetching new pools:", error);
@@ -207,8 +187,6 @@ export async function getPoolOHLCV(network, poolAddress, timeframe = 'hour', lim
   try {
     const url = `${GECKOTERMINAL_API}/networks/${network}/pools/${poolAddress}/ohlcv/${timeframe}?limit=${limit}`;
 
-    console.log('[DexScreener] Fetching OHLCV:', url);
-
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",
@@ -217,12 +195,10 @@ export async function getPoolOHLCV(network, poolAddress, timeframe = 'hour', lim
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[DexScreener] OHLCV failed:', response.status, errorText);
       throw new Error(`Failed to fetch OHLCV: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('[DexScreener] OHLCV response:', data);
 
     if (!data.data || !data.data.attributes || !data.data.attributes.ohlcv_list) {
       return [];
@@ -285,13 +261,6 @@ function parseSymbolsFromName(name) {
 function transformPool(pool) {
   const attrs = pool.attributes || {};
   const relationships = pool.relationships || {};
-
-  // Log attributes for debugging
-  console.log('[DexScreener] Pool attributes:', {
-    name: attrs.name,
-    transactions: attrs.transactions,
-    volume_usd: attrs.volume_usd,
-  });
 
   // Extract base and quote tokens
   const baseToken = relationships.base_token?.data || {};
