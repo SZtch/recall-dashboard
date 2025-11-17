@@ -239,6 +239,16 @@ export default function DexScreener({ onQuickTrade }) {
 
   // Copy to clipboard
   const copyToClipboard = (text, label) => {
+    // Check if text is valid
+    if (!text || text === 'undefined' || text === 'null') {
+      const toast = document.createElement("div");
+      toast.className = "fixed bottom-4 right-4 z-50 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-lg";
+      toast.textContent = `${label} not available`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2000);
+      return;
+    }
+
     navigator.clipboard.writeText(text).then(() => {
       const toast = document.createElement("div");
       toast.className = "fixed bottom-4 right-4 z-50 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg";

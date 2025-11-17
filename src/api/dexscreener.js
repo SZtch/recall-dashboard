@@ -256,6 +256,18 @@ function parseSymbolsFromName(name) {
 }
 
 /**
+ * Extract token address from GeckoTerminal token ID
+ * Format: "network_address"
+ */
+function extractTokenAddress(tokenId) {
+  if (!tokenId) return null;
+  const parts = tokenId.split('_');
+  if (parts.length < 2) return null;
+  // Join all parts after the first one (network) to handle addresses with underscores
+  return parts.slice(1).join('_');
+}
+
+/**
  * Transform GeckoTerminal pool data to our format
  */
 function transformPool(pool) {
@@ -290,6 +302,10 @@ function transformPool(pool) {
     }
   }
 
+  // Extract token addresses
+  const baseTokenAddress = extractTokenAddress(baseToken.id);
+  const quoteTokenAddress = extractTokenAddress(quoteToken.id);
+
   return {
     id: pool.id,
     address: attrs.address,
@@ -299,13 +315,13 @@ function transformPool(pool) {
     // Token info with clean symbols
     baseToken: {
       symbol: baseSymbol,
-      address: attrs.base_token_address || baseToken.address,
-      name: attrs.base_token_name || baseToken.name,
+      address: baseTokenAddress || null,
+      name: attrs.base_token_name || baseToken.name || baseSymbol,
     },
     quoteToken: {
       symbol: quoteSymbol,
-      address: attrs.quote_token_address || quoteToken.address,
-      name: attrs.quote_token_name || quoteToken.name,
+      address: quoteTokenAddress || null,
+      name: attrs.quote_token_name || quoteToken.name || quoteSymbol,
     },
 
     // Price data
