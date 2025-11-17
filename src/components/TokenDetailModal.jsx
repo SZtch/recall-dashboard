@@ -97,6 +97,7 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
       try {
         setLoading(true);
         const data = await getPoolOHLCV(pool.network, pool.address, timeframe, 100);
+        console.log(`Fetched ${data.length} candles from API`, data.slice(0, 2));
         setChartData(data);
       } catch (error) {
         console.error("Error fetching chart data:", error);
@@ -158,15 +159,31 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
       }))
       .filter(item => {
         // Filter out invalid data points
-        return (
-          !isNaN(item.time) &&
-          !isNaN(item.open) && item.open !== null &&
-          !isNaN(item.high) && item.high !== null &&
-          !isNaN(item.low) && item.low !== null &&
-          !isNaN(item.close) && item.close !== null &&
-          item.open > 0 && item.high > 0 && item.low > 0 && item.close > 0
-        );
-      });
+        if (
+          isNaN(item.time) ||
+          isNaN(item.open) || item.open === null || item.open <= 0 ||
+          isNaN(item.high) || item.high === null || item.high <= 0 ||
+          isNaN(item.low) || item.low === null || item.low <= 0 ||
+          isNaN(item.close) || item.close === null || item.close <= 0
+        ) {
+          return false;
+        }
+
+        // Validate OHLC relationships (critical for candlestick charts)
+        // High must be >= both open and close
+        // Low must be <= both open and close
+        if (
+          item.high < item.open ||
+          item.high < item.close ||
+          item.low > item.open ||
+          item.low > item.close
+        ) {
+          return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => a.time - b.time); // Sort chronologically
 
     // Skip chart creation if no valid data
     if (formattedData.length === 0) {
@@ -174,18 +191,26 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
       return;
     }
 
+    console.log(`Chart data: ${formattedData.length} valid candles`, formattedData.slice(0, 3));
+
     // Add candlestick or line series (v5 API)
     if (chartType === 'candlestick') {
-      const candleSeries = chart.addSeries(CandlestickSeries, {
-        upColor: '#10b981',
-        downColor: '#ef4444',
-        borderUpColor: '#10b981',
-        borderDownColor: '#ef4444',
-        wickUpColor: '#10b981',
-        wickDownColor: '#ef4444',
-      });
-      candleSeries.setData(formattedData);
-      candleSeriesRef.current = candleSeries;
+      try {
+        const candleSeries = chart.addSeries(CandlestickSeries, {
+          upColor: '#10b981',
+          downColor: '#ef4444',
+          borderUpColor: '#10b981',
+          borderDownColor: '#ef4444',
+          wickUpColor: '#10b981',
+          wickDownColor: '#ef4444',
+        });
+        candleSeries.setData(formattedData);
+        candleSeriesRef.current = candleSeries;
+      } catch (error) {
+        console.error('Error adding candlestick series:', error);
+        console.log('Failed data sample:', formattedData.slice(0, 5));
+        return;
+      }
     } else {
       const lineSeries = chart.addSeries(LineSeries, {
         color: pool.priceChangePercentage.h24 >= 0 ? '#10b981' : '#ef4444',

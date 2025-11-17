@@ -204,15 +204,49 @@ export async function getPoolOHLCV(network, poolAddress, timeframe = 'hour', lim
       return [];
     }
 
-    // Transform OHLCV data to chart format
-    return data.data.attributes.ohlcv_list.map(candle => ({
-      timestamp: candle[0] * 1000, // Convert to milliseconds
-      open: parseFloat(candle[1]),
-      high: parseFloat(candle[2]),
-      low: parseFloat(candle[3]),
-      close: parseFloat(candle[4]),
-      volume: parseFloat(candle[5]),
-    }));
+    // Transform OHLCV data to chart format with validation
+    return data.data.attributes.ohlcv_list
+      .map(candle => {
+        const timestamp = candle[0] * 1000;
+        const open = parseFloat(candle[1]);
+        const high = parseFloat(candle[2]);
+        const low = parseFloat(candle[3]);
+        const close = parseFloat(candle[4]);
+        const volume = parseFloat(candle[5] || 0);
+
+        return {
+          timestamp,
+          open,
+          high,
+          low,
+          close,
+          volume,
+        };
+      })
+      .filter(candle => {
+        // Filter out invalid candles
+        if (
+          !candle.timestamp ||
+          isNaN(candle.open) || candle.open === null || candle.open <= 0 ||
+          isNaN(candle.high) || candle.high === null || candle.high <= 0 ||
+          isNaN(candle.low) || candle.low === null || candle.low <= 0 ||
+          isNaN(candle.close) || candle.close === null || candle.close <= 0
+        ) {
+          return false;
+        }
+
+        // Validate OHLC relationships
+        if (
+          candle.high < candle.open ||
+          candle.high < candle.close ||
+          candle.low > candle.open ||
+          candle.low > candle.close
+        ) {
+          return false;
+        }
+
+        return true;
+      });
   } catch (error) {
     console.error("[DexScreener] Error fetching OHLCV:", error);
     return [];
