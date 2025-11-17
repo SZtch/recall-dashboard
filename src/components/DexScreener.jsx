@@ -33,14 +33,19 @@ export default function DexScreener({ onQuickTrade }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [pools, setPools] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [selectedPool, setSelectedPool] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  // Fetch data based on mode
+  // Fetch data based on mode (resets to page 1)
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      setCurrentPage(1);
+      setHasMore(true);
       let results = [];
 
       console.log('[DexScreener Component] Mode:', mode, 'Chain:', selectedChain, 'Query:', searchQuery);
@@ -48,13 +53,18 @@ export default function DexScreener({ onQuickTrade }) {
       if (mode === "search" && searchQuery.trim().length >= 2) {
         results = await searchPools(searchQuery);
       } else if (mode === "trending") {
-        results = await getTrendingPools(selectedChain);
+        results = await getTrendingPools(selectedChain, 1);
       } else if (mode === "new") {
-        results = await getNewPools(selectedChain);
+        results = await getNewPools(selectedChain, 1);
       }
 
       console.log('[DexScreener Component] Results:', results);
       setPools(results);
+
+      // If less than 20 results, there's likely no more pages
+      if (results.length < 20) {
+        setHasMore(false);
+      }
     } catch (error) {
       console.error("[DexScreener Component] Error fetching pools:", error);
       setError(error.message || "Failed to fetch pool data");
@@ -64,6 +74,44 @@ export default function DexScreener({ onQuickTrade }) {
       setLoading(false);
     }
   }, [mode, selectedChain, searchQuery]);
+
+  // Load more data (next page)
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore || mode === "search") return;
+
+    try {
+      setLoadingMore(true);
+      const nextPage = currentPage + 1;
+      let results = [];
+
+      console.log('[DexScreener Component] Loading page:', nextPage);
+
+      if (mode === "trending") {
+        results = await getTrendingPools(selectedChain, nextPage);
+      } else if (mode === "new") {
+        results = await getNewPools(selectedChain, nextPage);
+      }
+
+      console.log('[DexScreener Component] More results:', results.length);
+
+      if (results.length === 0) {
+        setHasMore(false);
+      } else {
+        setPools(prev => [...prev, ...results]);
+        setCurrentPage(nextPage);
+
+        // If less than 20 results, probably no more pages
+        if (results.length < 20) {
+          setHasMore(false);
+        }
+      }
+    } catch (error) {
+      console.error("[DexScreener Component] Error loading more:", error);
+      showError("Failed to load more pools");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [mode, selectedChain, currentPage, loadingMore, hasMore]);
 
   // Auto-fetch on mode/chain change
   useEffect(() => {
@@ -327,10 +375,39 @@ export default function DexScreener({ onQuickTrade }) {
         </div>
       )}
 
-      {/* Pool Count */}
+      {/* Pool Count & Load More */}
       {!loading && pools.length > 0 && (
-        <div className="text-center text-xs text-neutral-500">
-          Showing {pools.length} pool{pools.length !== 1 ? "s" : ""}
+        <div className="space-y-4">
+          <div className="text-center text-xs text-neutral-500">
+            Showing {pools.length} pool{pools.length !== 1 ? "s" : ""}
+          </div>
+
+          {/* Load More Button */}
+          {hasMore && mode !== "search" && (
+            <div className="flex justify-center">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="rounded-lg bg-sky-500/10 px-6 py-3 text-sm font-semibold text-sky-400 transition-all hover:bg-sky-500/20 hover:text-sky-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loadingMore ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />
+                    <span>Loading...</span>
+                  </div>
+                ) : (
+                  `Load More Pools (Page ${currentPage + 1})`
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* No More Pools Message */}
+          {!hasMore && mode !== "search" && pools.length >= 20 && (
+            <div className="text-center text-xs text-neutral-600">
+              No more pools to load
+            </div>
+          )}
         </div>
       )}
 

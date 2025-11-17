@@ -76,14 +76,15 @@ export async function searchPools(query) {
 /**
  * Get trending pools for a specific network
  * @param {string} chainKey - Chain key (ethereum, base, etc)
+ * @param {number} page - Page number (default 1)
  * @returns {Promise<Array>} Array of trending pools
  */
-export async function getTrendingPools(chainKey = "ethereum") {
+export async function getTrendingPools(chainKey = "ethereum", page = 1) {
   try {
     const networkId = getNetworkId(chainKey);
-    const url = `${GECKOTERMINAL_API}/networks/${networkId}/trending_pools`;
+    const url = `${GECKOTERMINAL_API}/networks/${networkId}/trending_pools?page=${page}`;
 
-    console.log('[DexScreener] Fetching trending pools:', chainKey, '->', networkId);
+    console.log('[DexScreener] Fetching trending pools:', chainKey, '->', networkId, 'page:', page);
     console.log('[DexScreener] URL:', url);
 
     const response = await fetch(url, {
@@ -118,14 +119,15 @@ export async function getTrendingPools(chainKey = "ethereum") {
 /**
  * Get new pools for a specific network
  * @param {string} chainKey - Chain key (ethereum, base, etc)
+ * @param {number} page - Page number (default 1)
  * @returns {Promise<Array>} Array of new pools
  */
-export async function getNewPools(chainKey = "ethereum") {
+export async function getNewPools(chainKey = "ethereum", page = 1) {
   try {
     const networkId = getNetworkId(chainKey);
-    const url = `${GECKOTERMINAL_API}/networks/${networkId}/new_pools`;
+    const url = `${GECKOTERMINAL_API}/networks/${networkId}/new_pools?page=${page}`;
 
-    console.log('[DexScreener] Fetching new pools:', chainKey, '->', networkId);
+    console.log('[DexScreener] Fetching new pools:', chainKey, '->', networkId, 'page:', page);
     console.log('[DexScreener] URL:', url);
 
     const response = await fetch(url, {
