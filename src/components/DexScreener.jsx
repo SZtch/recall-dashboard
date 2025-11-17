@@ -38,14 +38,22 @@ export default function DexScreener({ onQuickTrade }) {
   const [selectedPool, setSelectedPool] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [autoRefresh, setAutoRefresh] = useState(false);
-  const [refreshInterval, setRefreshInterval] = useState(30); // seconds
-  const [lastRefresh, setLastRefresh] = useState(Date.now());
   const [sortBy, setSortBy] = useState(null); // volume24h, liquidity, priceChange
   const [sortOrder, setSortOrder] = useState("desc"); // asc, desc
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem("dex-favorites");
     return saved ? JSON.parse(saved) : [];
+  });
+
+  // Filters
+  const [filters, setFilters] = useState({
+    minVolume: "",
+    maxVolume: "",
+    minLiquidity: "",
+    maxLiquidity: "",
+    minFDV: "",
+    maxFDV: "",
+    maxAge: "", // in hours
   });
 
   // Fetch data based on mode (resets to page 1)
@@ -137,21 +145,6 @@ export default function DexScreener({ onQuickTrade }) {
     return () => clearTimeout(timer);
   }, [searchQuery, mode, fetchData]);
 
-  // Auto-refresh effect
-  useEffect(() => {
-    if (!autoRefresh) return;
-
-    const interval = setInterval(() => {
-      // Only refresh if tab is visible
-      if (document.visibilityState === "visible") {
-        fetchData();
-        setLastRefresh(Date.now());
-      }
-    }, refreshInterval * 1000);
-
-    return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, fetchData]);
-
   // Save favorites to localStorage
   useEffect(() => {
     localStorage.setItem("dex-favorites", JSON.stringify(favorites));
@@ -168,11 +161,58 @@ export default function DexScreener({ onQuickTrade }) {
     });
   }, []);
 
-  // Sort pools
+  // Filter and sort pools
   const sortedPools = useMemo(() => {
-    if (!sortBy) return pools;
+    // First, apply filters
+    let filtered = [...pools];
 
-    const sorted = [...pools].sort((a, b) => {
+    // Volume filter
+    if (filters.minVolume) {
+      const minVol = parseFloat(filters.minVolume);
+      filtered = filtered.filter(pool => (parseFloat(pool.volume24h) || 0) >= minVol);
+    }
+    if (filters.maxVolume) {
+      const maxVol = parseFloat(filters.maxVolume);
+      filtered = filtered.filter(pool => (parseFloat(pool.volume24h) || 0) <= maxVol);
+    }
+
+    // Liquidity filter
+    if (filters.minLiquidity) {
+      const minLiq = parseFloat(filters.minLiquidity);
+      filtered = filtered.filter(pool => (parseFloat(pool.liquidity) || 0) >= minLiq);
+    }
+    if (filters.maxLiquidity) {
+      const maxLiq = parseFloat(filters.maxLiquidity);
+      filtered = filtered.filter(pool => (parseFloat(pool.liquidity) || 0) <= maxLiq);
+    }
+
+    // FDV filter
+    if (filters.minFDV) {
+      const minFdv = parseFloat(filters.minFDV);
+      filtered = filtered.filter(pool => (parseFloat(pool.fdv) || 0) >= minFdv);
+    }
+    if (filters.maxFDV) {
+      const maxFdv = parseFloat(filters.maxFDV);
+      filtered = filtered.filter(pool => (parseFloat(pool.fdv) || 0) <= maxFdv);
+    }
+
+    // Age filter (max hours)
+    if (filters.maxAge) {
+      const maxAgeHours = parseFloat(filters.maxAge);
+      const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
+      const now = Date.now();
+      filtered = filtered.filter(pool => {
+        if (!pool.poolCreatedAt) return true; // Include if no creation date
+        const createdAt = new Date(pool.poolCreatedAt).getTime();
+        const age = now - createdAt;
+        return age <= maxAgeMs;
+      });
+    }
+
+    // Then, apply sorting
+    if (!sortBy) return filtered;
+
+    const sorted = filtered.sort((a, b) => {
       let aVal, bVal;
 
       switch (sortBy) {
@@ -196,7 +236,7 @@ export default function DexScreener({ onQuickTrade }) {
     });
 
     return sorted;
-  }, [pools, sortBy, sortOrder]);
+  }, [pools, sortBy, sortOrder, filters]);
 
   // Handle quick buy
   const handleQuickBuy = (pool) => {
@@ -277,7 +317,7 @@ export default function DexScreener({ onQuickTrade }) {
             </button>
           </div>
 
-          {/* Auto-refresh & Controls */}
+          {/* Sort Controls */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Sort Dropdown */}
             <select
@@ -301,37 +341,107 @@ export default function DexScreener({ onQuickTrade }) {
                 {sortOrder === "asc" ? "↑" : "↓"}
               </button>
             )}
-
-            {/* Auto-refresh Toggle */}
-            <button
-              onClick={() => setAutoRefresh(!autoRefresh)}
-              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-all ${
-                autoRefresh
-                  ? "bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/50"
-                  : "bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800"
-              }`}
-              title={autoRefresh ? "Auto-refresh ON" : "Auto-refresh OFF"}
-            >
-              <svg className={`h-4 w-4 ${autoRefresh ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              {autoRefresh && `${refreshInterval}s`}
-            </button>
-
-            {/* Refresh Interval Selector (when auto-refresh is on) */}
-            {autoRefresh && (
-              <select
-                value={refreshInterval}
-                onChange={(e) => setRefreshInterval(Number(e.target.value))}
-                className="rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none"
-              >
-                <option value={15}>15s</option>
-                <option value={30}>30s</option>
-                <option value={60}>60s</option>
-              </select>
-            )}
           </div>
         </div>
+
+        {/* Filters */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Volume Filter */}
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-neutral-400">Volume (USD)</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                placeholder="Min"
+                value={filters.minVolume}
+                onChange={(e) => setFilters(prev => ({ ...prev, minVolume: e.target.value }))}
+                className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+              />
+              <input
+                type="number"
+                placeholder="Max"
+                value={filters.maxVolume}
+                onChange={(e) => setFilters(prev => ({ ...prev, maxVolume: e.target.value }))}
+                className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+              />
+            </div>
+          </div>
+
+          {/* Liquidity Filter */}
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-neutral-400">Liquidity (USD)</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                placeholder="Min"
+                value={filters.minLiquidity}
+                onChange={(e) => setFilters(prev => ({ ...prev, minLiquidity: e.target.value }))}
+                className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+              />
+              <input
+                type="number"
+                placeholder="Max"
+                value={filters.maxLiquidity}
+                onChange={(e) => setFilters(prev => ({ ...prev, maxLiquidity: e.target.value }))}
+                className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+              />
+            </div>
+          </div>
+
+          {/* FDV Filter */}
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-neutral-400">FDV (USD)</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                placeholder="Min"
+                value={filters.minFDV}
+                onChange={(e) => setFilters(prev => ({ ...prev, minFDV: e.target.value }))}
+                className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+              />
+              <input
+                type="number"
+                placeholder="Max"
+                value={filters.maxFDV}
+                onChange={(e) => setFilters(prev => ({ ...prev, maxFDV: e.target.value }))}
+                className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+              />
+            </div>
+          </div>
+
+          {/* Age Filter */}
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-neutral-400">Max Age (hours)</label>
+            <input
+              type="number"
+              placeholder="e.g., 24"
+              value={filters.maxAge}
+              onChange={(e) => setFilters(prev => ({ ...prev, maxAge: e.target.value }))}
+              className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+            />
+          </div>
+        </div>
+
+        {/* Clear Filters Button */}
+        {(filters.minVolume || filters.maxVolume || filters.minLiquidity || filters.maxLiquidity ||
+          filters.minFDV || filters.maxFDV || filters.maxAge) && (
+          <div className="flex justify-end">
+            <button
+              onClick={() => setFilters({
+                minVolume: "",
+                maxVolume: "",
+                minLiquidity: "",
+                maxLiquidity: "",
+                minFDV: "",
+                maxFDV: "",
+                maxAge: "",
+              })}
+              className="rounded-lg bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-400 transition-all hover:bg-red-500/20"
+            >
+              Clear Filters
+            </button>
+          </div>
+        )}
 
         {/* Search Input (visible in search mode) */}
         {mode === "search" && (
