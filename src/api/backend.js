@@ -91,9 +91,9 @@ async function fetchWithProxy(url, options = {}) {
 export async function getBalances(apiKey, env, competitionId = null) {
   const baseUrl = getBaseUrl(env);
 
-  // Add competition_id query parameter if provided
+  // Add competitionId query parameter if provided (camelCase per API spec)
   const url = competitionId
-    ? `${baseUrl}/api/agent/balances?competition_id=${encodeURIComponent(competitionId)}`
+    ? `${baseUrl}/api/agent/balances?competitionId=${encodeURIComponent(competitionId)}`
     : `${baseUrl}/api/agent/balances`;
 
   const resp = await fetchWithProxy(url, {
@@ -119,9 +119,9 @@ export async function getBalances(apiKey, env, competitionId = null) {
 export async function getHistory(apiKey, env, competitionId = null) {
   const baseUrl = getBaseUrl(env);
 
-  // Add competition_id query parameter if provided
+  // Add competitionId query parameter if provided (camelCase per API spec)
   const url = competitionId
-    ? `${baseUrl}/api/agent/trades?competition_id=${encodeURIComponent(competitionId)}`
+    ? `${baseUrl}/api/agent/trades?competitionId=${encodeURIComponent(competitionId)}`
     : `${baseUrl}/api/agent/trades`;
 
   const resp = await fetchWithProxy(url, {
@@ -153,9 +153,9 @@ export async function getPnlUnrealized(apiKey, env, competitionId = null) {
   const baseUrl = getBaseUrl(env);
 
   try {
-    // Add competition_id query parameter if provided
+    // Add competitionId query parameter if provided (camelCase per API spec)
     const url = competitionId
-      ? `${baseUrl}/api/agent/pnl/unrealized?competition_id=${encodeURIComponent(competitionId)}`
+      ? `${baseUrl}/api/agent/pnl/unrealized?competitionId=${encodeURIComponent(competitionId)}`
       : `${baseUrl}/api/agent/pnl/unrealized`;
 
     const resp = await fetchWithProxy(url, {
@@ -218,8 +218,8 @@ export async function executeTrade(apiKey, env, competitionId = null, payload) {
     toToken: payload.toToken,
     amount: Number(payload.amount),
     reason: payload.reason || "TRADE",
-    // Add competition_id to body if provided
-    ...(competitionId && { competition_id: competitionId }),
+    // Add competitionId to body if provided (camelCase per API spec)
+    ...(competitionId && { competitionId: competitionId }),
     // Kalau nanti Recall menambah dukungan chain routing,
     // kamu bisa tambahkan:
     // fromChainKey: payload.fromChainKey,
