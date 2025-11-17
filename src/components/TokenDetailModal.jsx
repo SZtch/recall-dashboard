@@ -12,6 +12,43 @@ import {
 import { getPoolOHLCV, formatTokenPrice, formatLargeNumber, formatPriceChange, getPriceChangeColor } from "../api/dexscreener";
 import { showError } from "../utils/toast";
 
+// Aggregate candles (e.g., convert 1M to 5M, 1H to 4H)
+function aggregateCandles(candles, multiplier) {
+  if (multiplier === 1) return candles;
+
+  const aggregated = [];
+  for (let i = 0; i < candles.length; i += multiplier) {
+    const group = candles.slice(i, i + multiplier);
+    if (group.length === 0) continue;
+
+    const open = group[0].open;
+    const high = Math.max(...group.map(c => c.high));
+    const low = Math.min(...group.map(c => c.low));
+    const close = group[group.length - 1].close;
+    const volume = group.reduce((sum, c) => sum + (c.volume || 0), 0);
+
+    // Validate aggregated candle
+    if (
+      !isNaN(open) && open > 0 &&
+      !isNaN(high) && high > 0 &&
+      !isNaN(low) && low > 0 &&
+      !isNaN(close) && close > 0 &&
+      high >= open && high >= close &&
+      low <= open && low <= close
+    ) {
+      aggregated.push({
+        time: group[0].time, // Use timestamp of first candle in group
+        open,
+        high,
+        low,
+        close,
+        volume,
+      });
+    }
+  }
+  return aggregated;
+}
+
 // Calculate Moving Average
 function calculateMA(data, period) {
   const result = [];
@@ -80,14 +117,16 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
   });
 
   // Map timeframe labels to GeckoTerminal API values
+  // API only supports: 'minute', 'hour', 'day'
+  // For other timeframes, we aggregate base data
   const timeframeToAPI = {
-    '1M': { value: 'minute', limit: 60 },
-    '5M': { value: 'minute', limit: 100 },
-    '15M': { value: 'minute', limit: 100 },
-    '30M': { value: 'minute', limit: 100 },
-    '1H': { value: 'hour', limit: 100 },
-    '4H': { value: 'hour', limit: 100 },
-    '1D': { value: 'day', limit: 100 },
+    '1M': { value: 'minute', limit: 100, multiplier: 1 },
+    '5M': { value: 'minute', limit: 500, multiplier: 5 },   // Fetch 500 minutes, aggregate to 100 5M candles
+    '15M': { value: 'minute', limit: 1000, multiplier: 15 }, // Fetch 1000 minutes, aggregate to ~66 15M candles
+    '30M': { value: 'minute', limit: 1000, multiplier: 30 }, // Fetch 1000 minutes, aggregate to ~33 30M candles
+    '1H': { value: 'hour', limit: 100, multiplier: 1 },
+    '4H': { value: 'hour', limit: 400, multiplier: 4 },     // Fetch 400 hours, aggregate to 100 4H candles
+    '1D': { value: 'day', limit: 100, multiplier: 1 },
   };
 
   const chartContainerRef = useRef(null);
@@ -108,14 +147,45 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
       try {
         setLoading(true);
         const apiConfig = timeframeToAPI[timeframe];
-        const data = await getPoolOHLCV(
+
+        // Fetch base data from API
+        const rawData = await getPoolOHLCV(
           pool.network,
           pool.address,
           apiConfig.value,
           apiConfig.limit
         );
-        console.log(`Fetched ${data.length} candles for ${timeframe}`, data.slice(0, 2));
-        setChartData(data);
+        console.log(`Fetched ${rawData.length} raw ${apiConfig.value} candles for ${timeframe}`);
+
+        // Aggregate if needed (e.g., 1M -> 5M, 1H -> 4H)
+        let processedData = rawData;
+        if (apiConfig.multiplier > 1) {
+          // Convert to format expected by aggregateCandles
+          const candlesForAggregation = rawData.map(item => ({
+            time: Math.floor(new Date(item.timestamp).getTime() / 1000),
+            open: parseFloat(item.open),
+            high: parseFloat(item.high),
+            low: parseFloat(item.low),
+            close: parseFloat(item.close),
+            volume: parseFloat(item.volume || 0),
+          }));
+
+          const aggregated = aggregateCandles(candlesForAggregation, apiConfig.multiplier);
+
+          // Convert back to API format
+          processedData = aggregated.map(candle => ({
+            timestamp: candle.time * 1000,
+            open: candle.open,
+            high: candle.high,
+            low: candle.low,
+            close: candle.close,
+            volume: candle.volume,
+          }));
+
+          console.log(`Aggregated to ${processedData.length} ${timeframe} candles`);
+        }
+
+        setChartData(processedData);
       } catch (error) {
         console.error("Error fetching chart data:", error);
         showError("Failed to load chart data");
@@ -125,7 +195,7 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
     };
 
     fetchChartData();
-  }, [pool, timeframe]);
+  }, [pool, timeframe]); // timeframeToAPI is stable, no need in deps
 
   // Initialize and update chart
   useEffect(() => {
