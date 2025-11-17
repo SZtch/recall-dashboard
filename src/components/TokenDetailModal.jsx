@@ -5,34 +5,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { getPoolOHLCV, formatTokenPrice, formatLargeNumber, formatPriceChange, getPriceChangeColor } from "../api/dexscreener";
 import { showError } from "../utils/toast";
 
-// Get blockchain explorer URL
-const getExplorerUrl = (network, address) => {
-  const explorers = {
-    eth: `https://etherscan.io/token/${address}`,
-    base: `https://basescan.org/token/${address}`,
-    polygon_pos: `https://polygonscan.com/token/${address}`,
-    optimism: `https://optimistic.etherscan.io/token/${address}`,
-    arbitrum: `https://arbiscan.io/token/${address}`,
-    bsc: `https://bscscan.com/token/${address}`,
-    solana: `https://solscan.io/token/${address}`,
-  };
-  return explorers[network] || `https://etherscan.io/token/${address}`;
-};
-
-// Get DEX URL for trading
-const getDexUrl = (network, address) => {
-  const dexUrls = {
-    eth: `https://app.uniswap.org/#/swap?outputCurrency=${address}`,
-    base: `https://app.uniswap.org/#/swap?outputCurrency=${address}&chain=base`,
-    polygon_pos: `https://app.uniswap.org/#/swap?outputCurrency=${address}&chain=polygon`,
-    optimism: `https://app.uniswap.org/#/swap?outputCurrency=${address}&chain=optimism`,
-    arbitrum: `https://app.uniswap.org/#/swap?outputCurrency=${address}&chain=arbitrum`,
-    bsc: `https://pancakeswap.finance/swap?outputCurrency=${address}`,
-    solana: `https://jup.ag/swap/SOL-${address}`,
-  };
-  return dexUrls[network] || `https://app.uniswap.org/#/swap?outputCurrency=${address}`;
-};
-
 export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
   const { t } = useTranslation();
 
@@ -132,51 +104,6 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
                 <span className={`text-lg font-semibold ${getPriceChangeColor(priceChange24h)}`}>
                   {formatPriceChange(priceChange24h)}
                 </span>
-              </div>
-
-              {/* External Links */}
-              <div className="mt-3 flex flex-wrap gap-2">
-                <a
-                  href={`https://dexscreener.com/${pool.network}/${pool.address}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 rounded-lg bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-400 transition-all hover:bg-sky-500/20"
-                >
-                  <span>📊</span>
-                  <span>DexScreener</span>
-                </a>
-                <a
-                  href={getExplorerUrl(pool.network, pool.baseToken.address)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 rounded-lg bg-purple-500/10 px-3 py-1.5 text-xs font-semibold text-purple-400 transition-all hover:bg-purple-500/20"
-                >
-                  <span>🔍</span>
-                  <span>Explorer</span>
-                </a>
-                <a
-                  href={getDexUrl(pool.network, pool.baseToken.address)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-400 transition-all hover:bg-emerald-500/20"
-                >
-                  <span>🔄</span>
-                  <span>Trade on DEX</span>
-                </a>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(pool.baseToken.address);
-                    const toast = document.createElement("div");
-                    toast.className = "fixed bottom-4 right-4 z-50 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg";
-                    toast.textContent = "Address copied!";
-                    document.body.appendChild(toast);
-                    setTimeout(() => toast.remove(), 2000);
-                  }}
-                  className="inline-flex items-center gap-1 rounded-lg bg-neutral-700/30 px-3 py-1.5 text-xs font-semibold text-neutral-300 transition-all hover:bg-neutral-700/50"
-                >
-                  <span>📋</span>
-                  <span>Copy Address</span>
-                </button>
               </div>
             </div>
 
