@@ -1333,22 +1333,31 @@ export default function Dashboard() {
 
       {/* ============ DASHBOARD (CONNECTED) ============ */}
       {isConnected && (
-        <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 pb-6 pt-3 sm:px-4 sm:pb-8 sm:pt-4 md:px-6 md:pb-10 md:pt-5 lg:px-8 lg:pt-6">
+        <main className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 pb-6 pt-3 sm:px-4 sm:pb-8 sm:pt-4 md:px-6 md:pb-10 md:pt-5 lg:px-8 lg:pt-6">
+          {/* Premium animated background gradient */}
+          <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+            <div className="absolute -top-1/2 left-0 h-96 w-96 animate-pulse rounded-full bg-gradient-to-br from-sky-500/10 via-purple-500/10 to-transparent blur-3xl" />
+            <div className="absolute -bottom-1/2 right-0 h-96 w-96 animate-pulse rounded-full bg-gradient-to-br from-emerald-500/10 via-blue-500/10 to-transparent blur-3xl animation-delay-2000" />
+          </div>
+
           {/* Mobile-optimized header */}
-          <header className="mb-4 flex flex-col items-start justify-between gap-3 sm:mb-5 md:mb-6 md:flex-row md:items-center md:gap-4">
+          <header className="relative z-10 mb-4 flex flex-col items-start justify-between gap-3 sm:mb-5 md:mb-6 md:flex-row md:items-center md:gap-4">
             <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
-              <img
-                src={RecallLogo}
-                alt="Recall Logo"
-                className="h-12 w-12 object-contain sm:h-14 sm:w-14 md:h-16 md:w-16"
-              />
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-sky-400 to-emerald-400 opacity-20 blur-xl" />
+                <img
+                  src={RecallLogo}
+                  alt="Recall Logo"
+                  className="relative h-12 w-12 object-contain sm:h-14 sm:w-14 md:h-16 md:w-16"
+                />
+              </div>
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-neutral-500 sm:text-[11px]">
+                <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-neutral-400 sm:text-[11px]">
                   Recall Agent Dashboard
                 </div>
                 <h1 className="mt-0.5 text-base font-bold leading-tight sm:text-lg md:text-xl lg:text-2xl">
                   Welcome back,{" "}
-                  <span className="bg-gradient-to-r from-sky-400 to-emerald-400 bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-sky-400 via-blue-400 to-emerald-400 bg-clip-text text-transparent">
                     {agentName}
                   </span>
                 </h1>
@@ -1414,81 +1423,108 @@ export default function Dashboard() {
             </div>
           )}
 
-          <section className="relative overflow-hidden rounded-xl border border-neutral-800/60 bg-gradient-to-b from-neutral-950/95 via-neutral-950/90 to-black/95 shadow-2xl backdrop-blur-sm sm:rounded-2xl">
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/40 to-transparent" />
+          <section className="group relative z-10 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-neutral-900/40 via-neutral-950/60 to-black/80 shadow-2xl shadow-black/50 backdrop-blur-xl transition-all duration-500 hover:shadow-sky-500/10 sm:rounded-3xl">
+            {/* Multi-layer glow effects */}
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/60 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
+              <div className="absolute right-0 top-0 h-64 w-64 bg-gradient-to-br from-sky-500/5 to-transparent blur-3xl" />
+              <div className="absolute bottom-0 left-0 h-64 w-64 bg-gradient-to-tr from-emerald-500/5 to-transparent blur-3xl" />
+            </div>
 
             {/* Mobile-optimized tab navigation */}
-            <div className="scrollbar-hide overflow-x-auto border-b border-neutral-800/50 bg-neutral-950/60 px-2 pt-2 sm:px-3 sm:pt-3 md:px-4 md:pt-4">
-              <div className="inline-flex min-w-full items-center gap-0.5 rounded-t-lg bg-neutral-900/80 p-0.5 text-[10px] font-bold uppercase tracking-[0.12em] sm:gap-1 sm:p-1 sm:text-[11px] md:min-w-0 md:text-xs">
+            <div className="relative scrollbar-hide overflow-x-auto border-b border-white/5 bg-gradient-to-b from-neutral-900/60 to-neutral-950/40 px-2 pt-2 backdrop-blur-sm sm:px-3 sm:pt-3 md:px-4 md:pt-4">
+              <div className="inline-flex min-w-full items-center gap-0.5 rounded-t-xl bg-black/20 p-0.5 text-[10px] font-bold uppercase tracking-[0.12em] backdrop-blur-md sm:gap-1 sm:p-1 sm:text-[11px] md:min-w-0 md:text-xs">
                 <button
                   onClick={() => setActiveTab("balances")}
-                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 transition-all duration-200 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
+                  className={`group/tab relative flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all duration-300 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
                     activeTab === "balances"
-                      ? "bg-sky-500 text-black shadow-md shadow-sky-500/25"
-                      : "text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-100"
+                      ? "bg-gradient-to-r from-sky-500 to-blue-500 text-black shadow-lg shadow-sky-500/40"
+                      : "text-neutral-400 hover:bg-white/5 hover:text-neutral-100"
                   }`}
                 >
-                  {t('tabs.balances')}
+                  {activeTab === "balances" && (
+                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-sky-500 to-blue-500 opacity-50 blur-lg" />
+                  )}
+                  <span className="relative">{t('tabs.balances')}</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("history")}
-                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 transition-all duration-200 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
+                  className={`group/tab relative flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all duration-300 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
                     activeTab === "history"
-                      ? "bg-sky-500 text-black shadow-md shadow-sky-500/25"
-                      : "text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-100"
+                      ? "bg-gradient-to-r from-sky-500 to-blue-500 text-black shadow-lg shadow-sky-500/40"
+                      : "text-neutral-400 hover:bg-white/5 hover:text-neutral-100"
                   }`}
                 >
-                  {t('tabs.history')}
+                  {activeTab === "history" && (
+                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-sky-500 to-blue-500 opacity-50 blur-lg" />
+                  )}
+                  <span className="relative">{t('tabs.history')}</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("pnl")}
-                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 transition-all duration-200 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
+                  className={`group/tab relative flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all duration-300 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
                     activeTab === "pnl"
-                      ? "bg-sky-500 text-black shadow-md shadow-sky-500/25"
-                      : "text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-100"
+                      ? "bg-gradient-to-r from-sky-500 to-blue-500 text-black shadow-lg shadow-sky-500/40"
+                      : "text-neutral-400 hover:bg-white/5 hover:text-neutral-100"
                   }`}
                 >
-                  {t('tabs.pnl')}
+                  {activeTab === "pnl" && (
+                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-sky-500 to-blue-500 opacity-50 blur-lg" />
+                  )}
+                  <span className="relative">{t('tabs.pnl')}</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("buy")}
-                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 transition-all duration-200 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
+                  className={`group/tab relative flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all duration-300 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
                     activeTab === "buy"
-                      ? "bg-emerald-500 text-black shadow-md shadow-emerald-500/25"
-                      : "text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-100"
+                      ? "bg-gradient-to-r from-emerald-500 to-green-500 text-black shadow-lg shadow-emerald-500/40"
+                      : "text-neutral-400 hover:bg-white/5 hover:text-neutral-100"
                   }`}
                 >
-                  {t('tabs.buy')}
+                  {activeTab === "buy" && (
+                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 opacity-50 blur-lg" />
+                  )}
+                  <span className="relative">{t('tabs.buy')}</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("sell")}
-                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 transition-all duration-200 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
+                  className={`group/tab relative flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all duration-300 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
                     activeTab === "sell"
-                      ? "bg-rose-500 text-white shadow-md shadow-rose-500/25"
-                      : "text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-100"
+                      ? "bg-gradient-to-r from-rose-500 to-red-500 text-white shadow-lg shadow-rose-500/40"
+                      : "text-neutral-400 hover:bg-white/5 hover:text-neutral-100"
                   }`}
                 >
-                  {t('tabs.sell')}
+                  {activeTab === "sell" && (
+                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-rose-500 to-red-500 opacity-50 blur-lg" />
+                  )}
+                  <span className="relative">{t('tabs.sell')}</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("verify")}
-                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 transition-all duration-200 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
+                  className={`group/tab relative flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all duration-300 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
                     activeTab === "verify"
-                      ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/25"
-                      : "text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-100"
+                      ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/40"
+                      : "text-neutral-400 hover:bg-white/5 hover:text-neutral-100"
                   }`}
                 >
-                  {t('tabs.verify')}
+                  {activeTab === "verify" && (
+                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 opacity-50 blur-lg" />
+                  )}
+                  <span className="relative">{t('tabs.verify')}</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("discover")}
-                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 transition-all duration-200 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
+                  className={`group/tab relative flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all duration-300 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
                     activeTab === "discover"
-                      ? "bg-purple-500 text-white shadow-md shadow-purple-500/25"
-                      : "text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-100"
+                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/40"
+                      : "text-neutral-400 hover:bg-white/5 hover:text-neutral-100"
                   }`}
                 >
-                  Discover
+                  {activeTab === "discover" && (
+                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 opacity-50 blur-lg" />
+                  )}
+                  <span className="relative">Discover</span>
                 </button>
               </div>
             </div>
