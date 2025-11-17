@@ -1333,26 +1333,26 @@ export default function Dashboard() {
 
       {/* ============ DASHBOARD (CONNECTED) ============ */}
       {isConnected && (
-        <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 pb-8 pt-4 sm:px-5 sm:pb-10 sm:pt-5 md:px-6 md:pb-12 md:pt-6 lg:px-8 lg:pt-8">
+        <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 pb-6 pt-3 sm:px-4 sm:pb-8 sm:pt-4 md:px-6 md:pb-10 md:pt-5 lg:px-8 lg:pt-6">
           {/* Mobile-optimized header */}
-          <header className="mb-5 flex flex-col items-start justify-between gap-4 sm:mb-6 md:mb-8 md:flex-row md:items-center md:gap-4">
-            <div className="flex items-center gap-3 sm:gap-3 md:gap-4">
+          <header className="mb-4 flex flex-col items-start justify-between gap-3 sm:mb-5 md:mb-6 md:flex-row md:items-center md:gap-4">
+            <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
               <img
                 src={RecallLogo}
                 alt="Recall Logo"
-                className="h-14 w-14 object-contain sm:h-16 sm:w-16 md:h-16 md:w-16 lg:h-18 lg:w-18"
+                className="h-12 w-12 object-contain sm:h-14 sm:w-14 md:h-16 md:w-16"
               />
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-neutral-500 sm:text-[11px] md:text-xs">
+                <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-neutral-500 sm:text-[11px]">
                   Recall Agent Dashboard
                 </div>
-                <h1 className="mt-1 text-lg font-bold leading-tight sm:text-xl md:mt-1 md:text-2xl lg:text-3xl">
+                <h1 className="mt-0.5 text-base font-bold leading-tight sm:text-lg md:text-xl lg:text-2xl">
                   Welcome back,{" "}
                   <span className="bg-gradient-to-r from-sky-400 to-emerald-400 bg-clip-text text-transparent">
                     {agentName}
                   </span>
                 </h1>
-                <div className="mt-1 text-xs text-neutral-500 sm:text-sm md:text-xs">
+                <div className="mt-0.5 text-[10px] text-neutral-500 sm:text-xs">
                   Environment:{" "}
                   <span className="font-medium uppercase text-neutral-300">
                     {env}
@@ -1362,22 +1362,22 @@ export default function Dashboard() {
             </div>
 
             {/* Touch-friendly action buttons */}
-            <div className="flex w-full items-center gap-2 sm:gap-3 md:w-auto">
+            <div className="flex w-full items-center gap-2 sm:gap-2.5 md:w-auto">
               <LanguageSwitcher />
               <a
                 href="https://app.recall.network/competitions"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-sky-500/50 bg-sky-500/10 px-4 py-2.5 text-xs font-medium uppercase tracking-[0.12em] text-sky-300 transition-all active:scale-95 hover:border-sky-400 hover:bg-sky-500/20 hover:text-sky-200 sm:py-2.5 md:flex-none md:px-5 md:text-[11px]"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-sky-500/50 bg-sky-500/10 px-3 py-2 text-[10px] font-medium uppercase tracking-[0.1em] text-sky-300 shadow-sm transition-all duration-200 active:scale-95 hover:border-sky-400 hover:bg-sky-500/20 hover:text-sky-200 hover:shadow-sky-500/20 sm:px-4 sm:text-xs md:flex-none md:px-4"
               >
-                <svg className="h-3.5 w-3.5 sm:h-3 sm:w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
                 {t('header.leaderboard')}
               </a>
               <button
                 onClick={logout}
-                className="flex-1 rounded-lg border border-neutral-700/70 bg-neutral-900/50 px-4 py-2.5 text-xs font-medium uppercase tracking-[0.12em] text-neutral-200 transition-all active:scale-95 hover:border-rose-500/80 hover:bg-neutral-900/80 hover:text-rose-300 sm:py-2.5 md:flex-none md:px-5 md:text-[11px]"
+                className="flex-1 rounded-lg border border-neutral-700/70 bg-neutral-900/50 px-3 py-2 text-[10px] font-medium uppercase tracking-[0.1em] text-neutral-200 shadow-sm transition-all duration-200 active:scale-95 hover:border-rose-500/80 hover:bg-neutral-900/80 hover:text-rose-300 hover:shadow-rose-500/20 sm:px-4 sm:text-xs md:flex-none md:px-4"
               >
                 {t('header.logout')}
               </button>
@@ -1414,78 +1414,78 @@ export default function Dashboard() {
             </div>
           )}
 
-          <section className="relative overflow-hidden rounded-xl border border-neutral-800/60 bg-gradient-to-b from-neutral-950/95 via-neutral-950/90 to-black shadow-2xl shadow-neutral-950/50 sm:rounded-2xl">
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/30 to-transparent" />
+          <section className="relative overflow-hidden rounded-xl border border-neutral-800/60 bg-gradient-to-b from-neutral-950/95 via-neutral-950/90 to-black/95 shadow-2xl backdrop-blur-sm sm:rounded-2xl">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/40 to-transparent" />
 
             {/* Mobile-optimized tab navigation */}
-            <div className="scrollbar-hide overflow-x-auto border-b border-neutral-800/50 bg-neutral-950/50 px-2 pt-2 sm:px-3 sm:pt-3 md:px-5 md:pt-5">
-              <div className="inline-flex min-w-full items-center gap-1 rounded-t-xl bg-neutral-900/60 p-1 text-[10px] font-bold uppercase tracking-[0.15em] sm:gap-1.5 sm:text-[11px] md:min-w-0 md:p-1.5 md:text-xs">
+            <div className="scrollbar-hide overflow-x-auto border-b border-neutral-800/50 bg-neutral-950/60 px-2 pt-2 sm:px-3 sm:pt-3 md:px-4 md:pt-4">
+              <div className="inline-flex min-w-full items-center gap-0.5 rounded-t-lg bg-neutral-900/80 p-0.5 text-[10px] font-bold uppercase tracking-[0.12em] sm:gap-1 sm:p-1 sm:text-[11px] md:min-w-0 md:text-xs">
                 <button
                   onClick={() => setActiveTab("balances")}
-                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
+                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 transition-all duration-200 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
                     activeTab === "balances"
-                      ? "bg-sky-500 text-black shadow-lg shadow-sky-500/30"
-                      : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
+                      ? "bg-sky-500 text-black shadow-md shadow-sky-500/25"
+                      : "text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-100"
                   }`}
                 >
                   {t('tabs.balances')}
                 </button>
                 <button
                   onClick={() => setActiveTab("history")}
-                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
+                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 transition-all duration-200 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
                     activeTab === "history"
-                      ? "bg-sky-500 text-black shadow-lg shadow-sky-500/30"
-                      : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
+                      ? "bg-sky-500 text-black shadow-md shadow-sky-500/25"
+                      : "text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-100"
                   }`}
                 >
                   {t('tabs.history')}
                 </button>
                 <button
                   onClick={() => setActiveTab("pnl")}
-                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
+                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 transition-all duration-200 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
                     activeTab === "pnl"
-                      ? "bg-sky-500 text-black shadow-lg shadow-sky-500/30"
-                      : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
+                      ? "bg-sky-500 text-black shadow-md shadow-sky-500/25"
+                      : "text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-100"
                   }`}
                 >
                   {t('tabs.pnl')}
                 </button>
                 <button
                   onClick={() => setActiveTab("buy")}
-                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
+                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 transition-all duration-200 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
                     activeTab === "buy"
-                      ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30"
-                      : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
+                      ? "bg-emerald-500 text-black shadow-md shadow-emerald-500/25"
+                      : "text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-100"
                   }`}
                 >
                   {t('tabs.buy')}
                 </button>
                 <button
                   onClick={() => setActiveTab("sell")}
-                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
+                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 transition-all duration-200 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
                     activeTab === "sell"
-                      ? "bg-rose-500 text-white shadow-lg shadow-rose-500/30"
-                      : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
+                      ? "bg-rose-500 text-white shadow-md shadow-rose-500/25"
+                      : "text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-100"
                   }`}
                 >
                   {t('tabs.sell')}
                 </button>
                 <button
                   onClick={() => setActiveTab("verify")}
-                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
+                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 transition-all duration-200 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
                     activeTab === "verify"
-                      ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
-                      : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
+                      ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/25"
+                      : "text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-100"
                   }`}
                 >
                   {t('tabs.verify')}
                 </button>
                 <button
                   onClick={() => setActiveTab("discover")}
-                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
+                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 transition-all duration-200 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
                     activeTab === "discover"
-                      ? "bg-purple-500 text-white shadow-lg shadow-purple-500/30"
-                      : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
+                      ? "bg-purple-500 text-white shadow-md shadow-purple-500/25"
+                      : "text-neutral-400 hover:bg-neutral-800/60 hover:text-neutral-100"
                   }`}
                 >
                   Discover
@@ -1493,7 +1493,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="p-4 sm:p-5 md:p-6 lg:p-5">
+            <div className="p-3 sm:p-4 md:p-5">
               {activeTab === "balances" && (
                 <div>
                   {loading ? (
