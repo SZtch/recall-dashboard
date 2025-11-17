@@ -146,15 +146,33 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
 
     chartRef.current = chart;
 
-    // Prepare data with Unix timestamps
-    const formattedData = chartData.map(item => ({
-      time: Math.floor(new Date(item.timestamp).getTime() / 1000),
-      open: parseFloat(item.open),
-      high: parseFloat(item.high),
-      low: parseFloat(item.low),
-      close: parseFloat(item.close),
-      volume: parseFloat(item.volume || 0),
-    }));
+    // Prepare data with Unix timestamps and validate
+    const formattedData = chartData
+      .map(item => ({
+        time: Math.floor(new Date(item.timestamp).getTime() / 1000),
+        open: parseFloat(item.open),
+        high: parseFloat(item.high),
+        low: parseFloat(item.low),
+        close: parseFloat(item.close),
+        volume: parseFloat(item.volume || 0),
+      }))
+      .filter(item => {
+        // Filter out invalid data points
+        return (
+          !isNaN(item.time) &&
+          !isNaN(item.open) && item.open !== null &&
+          !isNaN(item.high) && item.high !== null &&
+          !isNaN(item.low) && item.low !== null &&
+          !isNaN(item.close) && item.close !== null &&
+          item.open > 0 && item.high > 0 && item.low > 0 && item.close > 0
+        );
+      });
+
+    // Skip chart creation if no valid data
+    if (formattedData.length === 0) {
+      console.warn('No valid chart data available');
+      return;
+    }
 
     // Add candlestick or line series (v5 API)
     if (chartType === 'candlestick') {
@@ -173,7 +191,10 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
         color: pool.priceChangePercentage.h24 >= 0 ? '#10b981' : '#ef4444',
         lineWidth: 2,
       });
-      lineSeries.setData(formattedData.map(d => ({ time: d.time, value: d.close })));
+      const lineData = formattedData
+        .map(d => ({ time: d.time, value: d.close }))
+        .filter(d => !isNaN(d.value) && d.value !== null && d.value > 0);
+      lineSeries.setData(lineData);
       candleSeriesRef.current = lineSeries;
     }
 
@@ -192,36 +213,47 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
           bottom: 0,
         },
       });
-      volumeSeries.setData(formattedData.map(d => ({
-        time: d.time,
-        value: d.volume,
-        color: d.close >= d.open ? '#10b98150' : '#ef444450',
-      })));
+      const volumeData = formattedData
+        .map(d => ({
+          time: d.time,
+          value: d.volume || 0,
+          color: d.close >= d.open ? '#10b98150' : '#ef444450',
+        }))
+        .filter(d => !isNaN(d.value) && d.value >= 0);
+      volumeSeries.setData(volumeData);
       volumeSeriesRef.current = volumeSeries;
     }
 
     // Add MA7 (v5 API)
     if (indicators.ma7) {
-      const ma7Data = calculateMA(formattedData, 7);
-      const ma7Series = chart.addSeries(LineSeries, {
-        color: '#eab308',
-        lineWidth: 1,
-        lineStyle: LineStyle.Dashed,
-      });
-      ma7Series.setData(ma7Data);
-      ma7SeriesRef.current = ma7Series;
+      const ma7Data = calculateMA(formattedData, 7).filter(
+        d => d.value !== null && !isNaN(d.value) && d.value > 0
+      );
+      if (ma7Data.length > 0) {
+        const ma7Series = chart.addSeries(LineSeries, {
+          color: '#eab308',
+          lineWidth: 1,
+          lineStyle: LineStyle.Dashed,
+        });
+        ma7Series.setData(ma7Data);
+        ma7SeriesRef.current = ma7Series;
+      }
     }
 
     // Add MA25 (v5 API)
     if (indicators.ma25) {
-      const ma25Data = calculateMA(formattedData, 25);
-      const ma25Series = chart.addSeries(LineSeries, {
-        color: '#f97316',
-        lineWidth: 1,
-        lineStyle: LineStyle.Dashed,
-      });
-      ma25Series.setData(ma25Data);
-      ma25SeriesRef.current = ma25Series;
+      const ma25Data = calculateMA(formattedData, 25).filter(
+        d => d.value !== null && !isNaN(d.value) && d.value > 0
+      );
+      if (ma25Data.length > 0) {
+        const ma25Series = chart.addSeries(LineSeries, {
+          color: '#f97316',
+          lineWidth: 1,
+          lineStyle: LineStyle.Dashed,
+        });
+        ma25Series.setData(ma25Data);
+        ma25SeriesRef.current = ma25Series;
+      }
     }
 
     // Fit content
@@ -287,14 +319,29 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
 
     rsiChartRef.current = rsiChart;
 
-    // Format data
-    const formattedData = chartData.map(item => ({
-      time: Math.floor(new Date(item.timestamp).getTime() / 1000),
-      close: parseFloat(item.close),
-    }));
+    // Format data and validate
+    const formattedData = chartData
+      .map(item => ({
+        time: Math.floor(new Date(item.timestamp).getTime() / 1000),
+        close: parseFloat(item.close),
+      }))
+      .filter(item => !isNaN(item.close) && item.close > 0);
+
+    // Skip if no valid data
+    if (formattedData.length < 15) {
+      console.warn('Not enough data to calculate RSI');
+      return;
+    }
 
     // Calculate RSI
-    const rsiData = calculateRSI(formattedData, 14);
+    const rsiData = calculateRSI(formattedData, 14).filter(
+      d => d.value !== null && !isNaN(d.value) && d.value >= 0 && d.value <= 100
+    );
+
+    if (rsiData.length === 0) {
+      console.warn('No valid RSI data');
+      return;
+    }
 
     // Add RSI line (v5 API)
     const rsiSeries = rsiChart.addSeries(LineSeries, {
