@@ -9,7 +9,6 @@ import BscIcon from "../assets/chains/bsc.svg";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import ApiKeyForm from "../components/ApiKeyForm";
-import PnlChart from "../components/PnlChart";
 import ChatbotPanel from "../components/chatbot/ChatbotPanel";
 import VerifyWalletPanel from "../components/VerifyWalletPanel";
 import DexScreener from "../components/DexScreener";
@@ -376,18 +375,15 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
         </div>
 
         {/* Chain Selection */}
-<div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+<div className="mb-5">
   <div>
     <label className="mb-2 block text-xs font-semibold tracking-wide text-neutral-300">
-      From Chain
+      Blockchain
     </label>
     <ChainSelect value={fromChain} onChange={setFromChain} />
-  </div>
-  <div>
-    <label className="mb-2 block text-xs font-semibold tracking-wide text-neutral-300">
-      To Chain
-    </label>
-    <ChainSelect value={toChain} onChange={setToChain} />
+    <p className="mt-1.5 text-xs text-neutral-500">
+      Both tokens will be traded on the same blockchain (cross-chain trading is disabled)
+    </p>
   </div>
 </div>
 
@@ -855,18 +851,15 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
         </div>
 
         {/* Chain Selection */}
-<div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+<div className="mb-5">
   <div>
     <label className="mb-2 block text-xs font-semibold tracking-wide text-neutral-300">
-      From Chain
+      Blockchain
     </label>
     <ChainSelect value={fromChain} onChange={setFromChain} />
-  </div>
-  <div>
-    <label className="mb-2 block text-xs font-semibold tracking-wide text-neutral-300">
-      To Chain
-    </label>
-    <ChainSelect value={toChain} onChange={setToChain} />
+    <p className="mt-1.5 text-xs text-neutral-500">
+      Both tokens will be traded on the same blockchain (cross-chain trading is disabled)
+    </p>
   </div>
 </div>
 
@@ -1683,7 +1676,6 @@ export default function Dashboard() {
 
               {activeTab === "pnl" && (
                 <div>
-                  <PnlChart data={pnlData} />
                   {pnlData.length > 0 && (
                     <div className="mt-5 overflow-x-auto -mx-4 sm:mx-0 sm:mt-6">
                       <table className="w-full min-w-[650px] text-xs sm:min-w-0 sm:text-sm">
