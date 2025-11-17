@@ -13,6 +13,7 @@ import PnlChart from "../components/PnlChart";
 import ChatbotPanel from "../components/chatbot/ChatbotPanel";
 import VerifyWalletPanel from "../components/VerifyWalletPanel";
 import LanguageSwitcher from "../components/LanguageSwitcher";
+import DexScreener from "../components/DexScreener";
 import {
   getBalances,
   getHistory,
@@ -1446,6 +1447,16 @@ export default function Dashboard() {
                 >
                   {t('tabs.verify')}
                 </button>
+                <button
+                  onClick={() => setActiveTab("discover")}
+                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
+                    activeTab === "discover"
+                      ? "bg-purple-500 text-white shadow-lg shadow-purple-500/30"
+                      : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
+                  }`}
+                >
+                  Discover
+                </button>
               </div>
             </div>
 
@@ -1657,6 +1668,17 @@ export default function Dashboard() {
                 <div className="mx-auto max-w-2xl">
                   <VerifyWalletPanel apiKey={apiKey} />
                 </div>
+              )}
+
+              {activeTab === "discover" && (
+                <DexScreener
+                  onQuickTrade={(tokenData) => {
+                    // Pre-fill buy form and switch to buy tab
+                    setActiveTab("buy");
+                    // You can add logic here to pre-fill the buy form
+                    showSuccess(`Ready to buy ${tokenData.token}!`);
+                  }}
+                />
               )}
             </div>
           </section>
