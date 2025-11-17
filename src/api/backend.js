@@ -225,6 +225,15 @@ export async function executeTrade(apiKey, env, competitionId = null, payload) {
     toChainKey: payload.toChainKey,
   };
 
+  // Debug logging
+  console.log("🔍 Trade Request:", {
+    fromChainKey: body.fromChainKey,
+    toChainKey: body.toChainKey,
+    fromToken: body.fromToken,
+    toToken: body.toToken,
+    amount: body.amount,
+  });
+
   const resp = await fetchWithProxy(`${baseUrl}/api/trade/execute`, {
     method: "POST",
     headers: buildHeaders(apiKey),
