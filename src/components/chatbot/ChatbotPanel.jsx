@@ -13,6 +13,7 @@ export default function ChatbotPanel({
   env,
   agentName,
   apiKey,
+  competitionId,
   onExecuteTrade,
   onClose,
 }) {
@@ -88,7 +89,9 @@ Number of positions: ${(pnl || []).length}.`;
       setLoading(true);
       setError("");
 
-      await executeTrade(apiKey, env, {
+      await executeTrade(apiKey, env, competitionId, {
+        fromChainKey: "solana", // Default to solana (cross-chain disabled)
+        toChainKey: "solana", // Must be same as fromChainKey
         fromToken: tradeParams.fromToken,
         toToken: tradeParams.toToken,
         amount: parseFloat(tradeParams.amount),

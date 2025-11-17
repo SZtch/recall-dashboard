@@ -1794,6 +1794,7 @@ export default function Dashboard() {
                 env={env}
                 agentName={agentName}
                 apiKey={apiKey}
+                competitionId={competitionId}
                 onExecuteTrade={refreshData}
                 onClose={() => setChatbotOpen(false)}
               />
