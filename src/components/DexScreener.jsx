@@ -35,10 +35,14 @@ export default function DexScreener({ onQuickTrade }) {
   const [sortBy, setSortBy] = useState(null); // volume24h, liquidity, priceChange
   const [sortOrder, setSortOrder] = useState("desc"); // asc, desc
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem("dex-favorites");
     return saved ? JSON.parse(saved) : [];
   });
+
+  // Pagination config
+  const ITEMS_PER_PAGE = 8;
 
   // Filters
   const [filters, setFilters] = useState({
@@ -79,6 +83,7 @@ export default function DexScreener({ onQuickTrade }) {
     try {
       setLoading(true);
       setError(null);
+      setCurrentPage(1); // Reset to first page on new data
       const results = await getTrendingPools(selectedChain, 1);
       setPools(results);
     } catch (error) {
@@ -95,6 +100,11 @@ export default function DexScreener({ onQuickTrade }) {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, sortBy, sortOrder]);
 
   // Save favorites to localStorage
   useEffect(() => {
@@ -253,6 +263,16 @@ export default function DexScreener({ onQuickTrade }) {
 
     return sorted;
   }, [pools, sortBy, sortOrder, filters]);
+
+  // Paginate sorted pools
+  const paginatedPools = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return sortedPools.slice(startIndex, endIndex);
+  }, [sortedPools, currentPage]);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(sortedPools.length / ITEMS_PER_PAGE);
 
   // Handle quick buy
   const handleQuickBuy = (pool) => {
@@ -532,7 +552,7 @@ export default function DexScreener({ onQuickTrade }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-800/30">
-                  {sortedPools.map((pool, idx) => {
+                  {paginatedPools.map((pool, idx) => {
                     const isFavorite = favorites.includes(pool.id);
                     return (
                     <tr
@@ -638,6 +658,55 @@ export default function DexScreener({ onQuickTrade }) {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="rounded-lg bg-neutral-800/50 px-3 py-2 text-sm font-semibold text-neutral-300 transition-all hover:bg-neutral-800 hover:text-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-neutral-800/50"
+                >
+                  ← Prev
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    // Show first, last, current, and neighbors
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
+                            currentPage === page
+                              ? "bg-gradient-to-r from-sky-500 to-blue-500 text-black shadow-lg shadow-sky-500/40"
+                              : "bg-neutral-800/50 text-neutral-300 hover:bg-neutral-800 hover:text-neutral-100"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                      return <span key={page} className="px-1 text-neutral-600">...</span>;
+                    }
+                    return null;
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="rounded-lg bg-neutral-800/50 px-3 py-2 text-sm font-semibold text-neutral-300 transition-all hover:bg-neutral-800 hover:text-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-neutral-800/50"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
           )}
         </div>
       )}
@@ -645,7 +714,7 @@ export default function DexScreener({ onQuickTrade }) {
       {/* Pool Count */}
       {!loading && sortedPools.length > 0 && (
         <div className="text-center text-xs text-neutral-500">
-          Showing {sortedPools.length} pool{sortedPools.length !== 1 ? "s" : ""}
+          Showing {paginatedPools.length} of {sortedPools.length} pool{sortedPools.length !== 1 ? "s" : ""}
           {favorites.length > 0 && ` • ${favorites.length} favorite${favorites.length !== 1 ? "s" : ""}`}
           {activeFilterCount > 0 && ` • ${activeFilterCount} filter${activeFilterCount !== 1 ? "s" : ""} active`}
         </div>
