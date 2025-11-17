@@ -681,12 +681,12 @@ export default function DexScreener({ onQuickTrade }) {
             className="absolute inset-0"
             onClick={() => setShowFilterModal(false)}
           />
-          <div className="relative w-full max-w-2xl rounded-xl border border-neutral-800/50 bg-neutral-900 p-6 shadow-2xl">
+          <div className="relative w-full max-w-md max-h-[85vh] overflow-y-auto rounded-xl border border-neutral-800/50 bg-neutral-900 p-4 shadow-2xl">
             {/* Header */}
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-neutral-100">Advanced Filters</h2>
-                <p className="mt-1 text-sm text-neutral-500">
+                <h2 className="text-lg font-bold text-neutral-100">Advanced Filters</h2>
+                <p className="mt-1 text-xs text-neutral-500">
                   Filter pools by volume, liquidity, FDV, and age
                 </p>
               </div>
@@ -701,17 +701,17 @@ export default function DexScreener({ onQuickTrade }) {
             </div>
 
             {/* Preset Filters */}
-            <div className="mb-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
-              <div className="mb-3 flex items-center gap-2">
-                <svg className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3">
+              <div className="mb-2 flex items-center gap-2">
+                <svg className="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <h3 className="text-sm font-bold text-emerald-400">Trading Eligibility</h3>
+                <h3 className="text-xs font-bold text-emerald-400">Trading Eligibility</h3>
               </div>
-              <p className="mb-3 text-xs text-emerald-300/80">
+              <p className="mb-2 text-[11px] text-emerald-300/80">
                 Apply minimum requirements for eligible trading tokens:
               </p>
-              <ul className="mb-4 space-y-1 text-xs text-emerald-300/70">
+              <ul className="mb-3 space-y-0.5 text-[11px] text-emerald-300/70">
                 <li>• Minimum 24h Volume: $100,000 USD</li>
                 <li>• Minimum Liquidity: $100,000 USD</li>
                 <li>• Minimum FDV: $500,000 USD</li>
@@ -721,7 +721,7 @@ export default function DexScreener({ onQuickTrade }) {
                 onClick={() => {
                   applyEligibilityFilter();
                 }}
-                className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
+                className={`w-full rounded-lg px-3 py-2 text-xs font-semibold transition-all ${
                   isEligibilityFilterActive
                     ? "bg-emerald-500/30 text-emerald-300 ring-1 ring-emerald-500/50"
                     : "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
@@ -732,91 +732,91 @@ export default function DexScreener({ onQuickTrade }) {
             </div>
 
             {/* Filter Form */}
-            <div className="space-y-5">
+            <div className="space-y-3">
               {/* Volume Filter */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-neutral-300">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-neutral-300">
                   Volume 24h (USD)
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <input
                     type="number"
                     placeholder="Minimum"
                     value={filters.minVolume}
                     onChange={(e) => setFilters(prev => ({ ...prev, minVolume: e.target.value }))}
-                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
                   />
                   <input
                     type="number"
                     placeholder="Maximum"
                     value={filters.maxVolume}
                     onChange={(e) => setFilters(prev => ({ ...prev, maxVolume: e.target.value }))}
-                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
                   />
                 </div>
               </div>
 
               {/* Liquidity Filter */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-neutral-300">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-neutral-300">
                   Liquidity (USD)
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <input
                     type="number"
                     placeholder="Minimum"
                     value={filters.minLiquidity}
                     onChange={(e) => setFilters(prev => ({ ...prev, minLiquidity: e.target.value }))}
-                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
                   />
                   <input
                     type="number"
                     placeholder="Maximum"
                     value={filters.maxLiquidity}
                     onChange={(e) => setFilters(prev => ({ ...prev, maxLiquidity: e.target.value }))}
-                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
                   />
                 </div>
               </div>
 
               {/* FDV Filter */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-neutral-300">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-neutral-300">
                   Fully Diluted Valuation (USD)
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <input
                     type="number"
                     placeholder="Minimum"
                     value={filters.minFDV}
                     onChange={(e) => setFilters(prev => ({ ...prev, minFDV: e.target.value }))}
-                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
                   />
                   <input
                     type="number"
                     placeholder="Maximum"
                     value={filters.maxFDV}
                     onChange={(e) => setFilters(prev => ({ ...prev, maxFDV: e.target.value }))}
-                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                    className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
                   />
                 </div>
               </div>
 
               {/* Age Filters */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-neutral-300">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-neutral-300">
                   Pool Age (hours)
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <div>
                     <input
                       type="number"
                       placeholder="Min age (e.g., 720)"
                       value={filters.minAge}
                       onChange={(e) => setFilters(prev => ({ ...prev, minAge: e.target.value }))}
-                      className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                      className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
                     />
-                    <p className="mt-1 text-xs text-neutral-500">
+                    <p className="mt-0.5 text-[10px] text-neutral-500">
                       For established tokens
                     </p>
                   </div>
@@ -826,9 +826,9 @@ export default function DexScreener({ onQuickTrade }) {
                       placeholder="Max age (e.g., 24)"
                       value={filters.maxAge}
                       onChange={(e) => setFilters(prev => ({ ...prev, maxAge: e.target.value }))}
-                      className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-4 py-2.5 text-sm text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
+                      className="w-full rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-2 text-xs text-neutral-300 outline-none transition-all focus:border-sky-400/80 focus:bg-neutral-900/90 focus:ring-2 focus:ring-sky-500/20"
                     />
-                    <p className="mt-1 text-xs text-neutral-500">
+                    <p className="mt-0.5 text-[10px] text-neutral-500">
                       For new pools
                     </p>
                   </div>
@@ -837,7 +837,7 @@ export default function DexScreener({ onQuickTrade }) {
             </div>
 
             {/* Actions */}
-            <div className="mt-6 flex items-center justify-between gap-3 border-t border-neutral-800/50 pt-6">
+            <div className="mt-4 flex items-center justify-between gap-2 border-t border-neutral-800/50 pt-4">
               <button
                 onClick={() => {
                   setFilters({
@@ -851,13 +851,13 @@ export default function DexScreener({ onQuickTrade }) {
                     maxAge: "",
                   });
                 }}
-                className="rounded-lg bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-400 transition-all hover:bg-red-500/20"
+                className="rounded-lg bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-400 transition-all hover:bg-red-500/20"
               >
                 Clear All Filters
               </button>
               <button
                 onClick={() => setShowFilterModal(false)}
-                className="rounded-lg bg-sky-500 px-6 py-2.5 text-sm font-semibold text-black transition-all hover:bg-sky-400 active:scale-95"
+                className="rounded-lg bg-sky-500 px-4 py-2 text-xs font-semibold text-black transition-all hover:bg-sky-400 active:scale-95"
               >
                 Apply Filters
               </button>
