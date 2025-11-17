@@ -220,10 +220,9 @@ export async function executeTrade(apiKey, env, competitionId = null, payload) {
     reason: payload.reason || "TRADE",
     // Add competitionId to body if provided (camelCase per API spec)
     ...(competitionId && { competitionId: competitionId }),
-    // Kalau nanti Recall menambah dukungan chain routing,
-    // kamu bisa tambahkan:
-    // fromChainKey: payload.fromChainKey,
-    // toChainKey: payload.toChainKey,
+    // Add chain keys for same-blockchain trading
+    fromChainKey: payload.fromChainKey,
+    toChainKey: payload.toChainKey,
   };
 
   const resp = await fetchWithProxy(`${baseUrl}/api/trade/execute`, {
