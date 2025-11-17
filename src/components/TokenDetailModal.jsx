@@ -247,14 +247,20 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
 
     // Prepare data with Unix timestamps and validate
     const formattedData = chartData
-      .map(item => ({
-        time: Math.floor(new Date(item.timestamp).getTime() / 1000),
-        open: parseFloat(item.open),
-        high: parseFloat(item.high),
-        low: parseFloat(item.low),
-        close: parseFloat(item.close),
-        volume: parseFloat(item.volume || 0),
-      }))
+      .map(item => {
+        // item.timestamp is already in milliseconds from API
+        // Convert to Unix timestamp (seconds)
+        const unixTime = Math.floor(item.timestamp / 1000);
+
+        return {
+          time: unixTime,
+          open: parseFloat(item.open),
+          high: parseFloat(item.high),
+          low: parseFloat(item.low),
+          close: parseFloat(item.close),
+          volume: parseFloat(item.volume || 0),
+        };
+      })
       .filter(item => {
         // Filter out invalid data points
         if (
@@ -448,10 +454,14 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
 
     // Format data and validate
     const formattedData = chartData
-      .map(item => ({
-        time: Math.floor(new Date(item.timestamp).getTime() / 1000),
-        close: parseFloat(item.close),
-      }))
+      .map(item => {
+        // item.timestamp is already in milliseconds from API
+        const unixTime = Math.floor(item.timestamp / 1000);
+        return {
+          time: unixTime,
+          close: parseFloat(item.close),
+        };
+      })
       .filter(item => !isNaN(item.close) && item.close > 0);
 
     // Skip if no valid data
@@ -713,16 +723,19 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
 
         {/* Chart */}
         <div className="p-4">
-          {loading ? (
-            <div className={`flex items-center justify-center ${isFullscreen ? 'h-[70vh]' : 'h-64'}`}>
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-700 border-t-sky-400" />
-            </div>
-          ) : chartData.length === 0 ? (
+          {chartData.length === 0 && !loading ? (
             <div className={`flex items-center justify-center ${isFullscreen ? 'h-[70vh]' : 'h-64'}`}>
               <p className="text-sm text-neutral-500">No chart data available</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 relative">
+              {/* Loading Overlay (subtle, no spinner) */}
+              {loading && (
+                <div className="absolute inset-0 z-10 bg-black/20 rounded-lg backdrop-blur-[2px] flex items-center justify-center">
+                  <div className="text-xs text-neutral-400">Loading...</div>
+                </div>
+              )}
+
               {/* Main Chart */}
               <div ref={chartContainerRef} className="rounded-lg border border-neutral-800/50" />
 
