@@ -91,10 +91,12 @@ async function fetchWithProxy(url, options = {}) {
 export async function getBalances(apiKey, env, competitionId = null) {
   const baseUrl = getBaseUrl(env);
 
-  // Add competitionId query parameter if provided (camelCase per API spec)
-  const url = competitionId
-    ? `${baseUrl}/api/agent/balances?competitionId=${encodeURIComponent(competitionId)}`
-    : `${baseUrl}/api/agent/balances`;
+  // competitionId is now REQUIRED by API (always include it)
+  const params = new URLSearchParams();
+  if (competitionId) {
+    params.append('competitionId', competitionId);
+  }
+  const url = `${baseUrl}/api/agent/balances${params.toString() ? '?' + params.toString() : ''}`;
 
   const resp = await fetchWithProxy(url, {
     method: "GET",
@@ -119,10 +121,12 @@ export async function getBalances(apiKey, env, competitionId = null) {
 export async function getHistory(apiKey, env, competitionId = null) {
   const baseUrl = getBaseUrl(env);
 
-  // Add competitionId query parameter if provided (camelCase per API spec)
-  const url = competitionId
-    ? `${baseUrl}/api/agent/trades?competitionId=${encodeURIComponent(competitionId)}`
-    : `${baseUrl}/api/agent/trades`;
+  // competitionId is now REQUIRED by API (always include it)
+  const params = new URLSearchParams();
+  if (competitionId) {
+    params.append('competitionId', competitionId);
+  }
+  const url = `${baseUrl}/api/agent/trades${params.toString() ? '?' + params.toString() : ''}`;
 
   const resp = await fetchWithProxy(url, {
     method: "GET",
@@ -153,10 +157,12 @@ export async function getPnlUnrealized(apiKey, env, competitionId = null) {
   const baseUrl = getBaseUrl(env);
 
   try {
-    // Add competitionId query parameter if provided (camelCase per API spec)
-    const url = competitionId
-      ? `${baseUrl}/api/agent/pnl/unrealized?competitionId=${encodeURIComponent(competitionId)}`
-      : `${baseUrl}/api/agent/pnl/unrealized`;
+    // competitionId is now REQUIRED by API (always include it)
+    const params = new URLSearchParams();
+    if (competitionId) {
+      params.append('competitionId', competitionId);
+    }
+    const url = `${baseUrl}/api/agent/pnl/unrealized${params.toString() ? '?' + params.toString() : ''}`;
 
     const resp = await fetchWithProxy(url, {
       method: "GET",
@@ -218,8 +224,8 @@ export async function executeTrade(apiKey, env, competitionId = null, payload) {
     toToken: payload.toToken,
     amount: Number(payload.amount),
     reason: payload.reason || "TRADE",
-    // Add competitionId to body if provided (camelCase per API spec)
-    ...(competitionId && { competitionId: competitionId }),
+    // competitionId is now REQUIRED by API (always include it)
+    competitionId: competitionId || null,
     // Add chain keys for same-blockchain trading (default to solana if not provided)
     fromChainKey: payload.fromChainKey || "solana",
     toChainKey: payload.toChainKey || "solana",
@@ -227,6 +233,7 @@ export async function executeTrade(apiKey, env, competitionId = null, payload) {
 
   // Debug logging
   console.log("🔍 Trade Request:", {
+    competitionId: body.competitionId,
     payload_fromChainKey: payload.fromChainKey,
     payload_toChainKey: payload.toChainKey,
     body_fromChainKey: body.fromChainKey,
