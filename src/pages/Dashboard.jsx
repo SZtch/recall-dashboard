@@ -13,6 +13,7 @@ import PnlChart from "../components/PnlChart";
 import ChatbotPanel from "../components/chatbot/ChatbotPanel";
 import VerifyWalletPanel from "../components/VerifyWalletPanel";
 import LanguageSwitcher from "../components/LanguageSwitcher";
+import DexScreener from "../components/DexScreener";
 import {
   getBalances,
   getHistory,
@@ -34,6 +35,22 @@ const CHAIN_OPTIONS = [
 ];
 
 // ---------------- HELPER FUNCTIONS ----------------
+
+// Map DexScreener chain IDs to Dashboard chain IDs
+function mapDexChainToDashboard(dexChain) {
+  const mapping = {
+    'eth': 'ethereum',
+    'ethereum': 'ethereum',
+    'base': 'base',
+    'polygon_pos': 'polygon',
+    'polygon': 'polygon',
+    'optimism': 'optimism',
+    'arbitrum': 'arbitrum',
+    'bsc': 'bsc',
+    'solana': 'solana',
+  };
+  return mapping[dexChain] || 'solana';
+}
 
 function normalizeBalances(raw) {
   if (!raw) return [];
@@ -168,7 +185,7 @@ function ChainSelect({ value, onChange }) {
 
 // ======================== BUY PANEL ========================
 
-function BuyPanel({ apiKey, env, onAfterTrade }) {
+function BuyPanel({ apiKey, env, onAfterTrade, initialData, onClearInitialData }) {
   const [mode, setMode] = useState("single");
   const [fromChain, setFromChain] = useState("solana");
   const [toChain, setToChain] = useState("solana");
@@ -177,6 +194,20 @@ function BuyPanel({ apiKey, env, onAfterTrade }) {
   const [buyToToken, setBuyToToken] = useState("");
   const [buyAmount, setBuyAmount] = useState("");
   const [buyReason, setBuyReason] = useState("");
+
+  // Pre-fill form when initialData is provided
+  useEffect(() => {
+    if (initialData) {
+      if (initialData.toToken) setBuyToToken(initialData.toToken);
+      if (initialData.toChain) setToChain(initialData.toChain);
+      if (initialData.fromChain) setFromChain(initialData.fromChain);
+
+      // Clear initial data after using it
+      if (onClearInitialData) {
+        setTimeout(() => onClearInitialData(), 100);
+      }
+    }
+  }, [initialData, onClearInitialData]);
 
   const [batchToToken, setBatchToToken] = useState("");
   const [batchTotal, setBatchTotal] = useState("");
@@ -1133,6 +1164,9 @@ export default function Dashboard() {
   const [openaiKey, setOpenaiKey] = useState(null);
   const [chatbotOpen, setChatbotOpen] = useState(false);
 
+  // State for pre-filling buy form from DEX screener
+  const [buyFormInitialData, setBuyFormInitialData] = useState(null);
+
   const isConnected = !!(agentName && apiKey);
 
   useEffect(() => {
@@ -1446,6 +1480,16 @@ export default function Dashboard() {
                 >
                   {t('tabs.verify')}
                 </button>
+                <button
+                  onClick={() => setActiveTab("discover")}
+                  className={`flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 transition-all duration-200 active:scale-95 sm:py-3 md:flex-none md:px-5 md:py-2.5 ${
+                    activeTab === "discover"
+                      ? "bg-purple-500 text-white shadow-lg shadow-purple-500/30"
+                      : "text-neutral-400 hover:bg-neutral-800/80 hover:text-neutral-100"
+                  }`}
+                >
+                  Discover
+                </button>
               </div>
             </div>
 
@@ -1646,7 +1690,13 @@ export default function Dashboard() {
               )}
 
               {activeTab === "buy" && (
-                <BuyPanel apiKey={apiKey} env={env} onAfterTrade={refreshData} />
+                <BuyPanel
+                  apiKey={apiKey}
+                  env={env}
+                  onAfterTrade={refreshData}
+                  initialData={buyFormInitialData}
+                  onClearInitialData={() => setBuyFormInitialData(null)}
+                />
               )}
 
               {activeTab === "sell" && (
@@ -1657,6 +1707,26 @@ export default function Dashboard() {
                 <div className="mx-auto max-w-2xl">
                   <VerifyWalletPanel apiKey={apiKey} />
                 </div>
+              )}
+
+              {activeTab === "discover" && (
+                <DexScreener
+                  onQuickTrade={(tokenData) => {
+                    // Map the chain from DexScreener to Dashboard format
+                    const mappedChain = mapDexChainToDashboard(tokenData.chain);
+
+                    // Pre-fill buy form data
+                    setBuyFormInitialData({
+                      toToken: tokenData.address,
+                      toChain: mappedChain,
+                      fromChain: mappedChain,
+                    });
+
+                    // Switch to buy tab
+                    setActiveTab("buy");
+                    showSuccess(`Ready to buy ${tokenData.token}!`);
+                  }}
+                />
               )}
             </div>
           </section>
