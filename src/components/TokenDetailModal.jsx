@@ -156,19 +156,24 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
           apiConfig.limit
         );
         console.log(`Fetched ${rawData.length} raw ${apiConfig.value} candles for ${timeframe}`);
+        if (rawData.length > 0) {
+          console.log('First raw candle timestamp:', new Date(rawData[0].timestamp));
+        }
 
         // Aggregate if needed (e.g., 1M -> 5M, 1H -> 4H)
         let processedData = rawData;
         if (apiConfig.multiplier > 1) {
           // Convert to format expected by aggregateCandles
-          const candlesForAggregation = rawData.map(item => ({
-            time: Math.floor(new Date(item.timestamp).getTime() / 1000),
-            open: parseFloat(item.open),
-            high: parseFloat(item.high),
-            low: parseFloat(item.low),
-            close: parseFloat(item.close),
-            volume: parseFloat(item.volume || 0),
-          }));
+          const candlesForAggregation = rawData
+            .map(item => ({
+              time: Math.floor(item.timestamp / 1000), // Already in ms from API
+              open: parseFloat(item.open),
+              high: parseFloat(item.high),
+              low: parseFloat(item.low),
+              close: parseFloat(item.close),
+              volume: parseFloat(item.volume || 0),
+            }))
+            .sort((a, b) => a.time - b.time); // Ensure chronological order
 
           const aggregated = aggregateCandles(candlesForAggregation, apiConfig.multiplier);
 
@@ -183,6 +188,7 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
           }));
 
           console.log(`Aggregated to ${processedData.length} ${timeframe} candles`);
+          console.log('First aggregated candle timestamp:', new Date(processedData[0].timestamp));
         }
 
         setChartData(processedData);
@@ -222,6 +228,11 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
       },
       rightPriceScale: {
         borderColor: '#404040',
+        visible: true,
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.2,
+        },
       },
       timeScale: {
         borderColor: '#404040',
@@ -279,6 +290,10 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
     }
 
     console.log(`Chart data: ${formattedData.length} valid candles`, formattedData.slice(0, 3));
+    if (formattedData.length > 0) {
+      console.log('First chart candle (Unix):', formattedData[0].time, 'Date:', new Date(formattedData[0].time * 1000));
+      console.log('Last chart candle (Unix):', formattedData[formattedData.length - 1].time, 'Date:', new Date(formattedData[formattedData.length - 1].time * 1000));
+    }
 
     // Add candlestick or line series (v5 API)
     if (chartType === 'candlestick') {
