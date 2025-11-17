@@ -231,17 +231,21 @@ export async function executeTrade(apiKey, env, competitionId = null, payload) {
     toChainKey: payload.toChainKey || "solana",
   };
 
-  // Debug logging
-  console.log("🔍 Trade Request:", {
+  // Debug logging - VERY VISIBLE
+  console.error("==========================================");
+  console.error("🔍 TRADE REQUEST DEBUG:");
+  console.error("==========================================");
+  console.table({
     competitionId: body.competitionId,
-    payload_fromChainKey: payload.fromChainKey,
-    payload_toChainKey: payload.toChainKey,
-    body_fromChainKey: body.fromChainKey,
-    body_toChainKey: body.toChainKey,
+    fromChainKey: body.fromChainKey,
+    toChainKey: body.toChainKey,
     fromToken: body.fromToken,
     toToken: body.toToken,
     amount: body.amount,
+    reason: body.reason,
   });
+  console.error("FULL BODY:", JSON.stringify(body, null, 2));
+  console.error("==========================================");
 
   const resp = await fetchWithProxy(`${baseUrl}/api/trade/execute`, {
     method: "POST",
