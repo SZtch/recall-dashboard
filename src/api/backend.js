@@ -199,19 +199,23 @@ export async function getPnlUnrealized(apiKey, env, competitionId = null) {
 
 /**
  * Map frontend chain identifiers to API-expected format
- * Frontend uses full names like "ethereum", but API might expect short codes like "eth"
+ * API expects: fromChain (svm/evm), fromSpecificChain (mainnet/ethereum/base/etc)
+ *
+ * Example from API docs:
+ * - Solana: { chain: "svm", specificChain: "mainnet" }
+ * - Ethereum: { chain: "evm", specificChain: "ethereum" }
  */
 function mapChainForAPI(chainId) {
   const mapping = {
-    'solana': 'solana',
-    'ethereum': 'eth',
-    'base': 'base',
-    'polygon': 'polygon',
-    'optimism': 'optimism',
-    'arbitrum': 'arbitrum',
-    'bsc': 'bsc',
+    'solana': { chain: 'svm', specificChain: 'mainnet' },
+    'ethereum': { chain: 'evm', specificChain: 'ethereum' },
+    'base': { chain: 'evm', specificChain: 'base' },
+    'polygon': { chain: 'evm', specificChain: 'polygon' },
+    'optimism': { chain: 'evm', specificChain: 'optimism' },
+    'arbitrum': { chain: 'evm', specificChain: 'arbitrum' },
+    'bsc': { chain: 'evm', specificChain: 'bsc' },
   };
-  return mapping[chainId] || chainId;
+  return mapping[chainId] || { chain: 'svm', specificChain: 'mainnet' };
 }
 
 /**
@@ -235,21 +239,22 @@ function mapChainForAPI(chainId) {
 export async function executeTrade(apiKey, env, competitionId = null, payload) {
   const baseUrl = getBaseUrl(env);
 
-  // Map chain identifiers to API format (e.g., "ethereum" -> "eth")
-  const fromChain = mapChainForAPI(payload.fromChainKey || "solana");
-  const toChain = mapChainForAPI(payload.toChainKey || "solana");
+  // Map chain identifiers to API format
+  const fromChainData = mapChainForAPI(payload.fromChainKey || "solana");
+  const toChainData = mapChainForAPI(payload.toChainKey || "solana");
 
-  // Kita hanya kirim field yang memang dipakai Recall API
+  // Build request body according to API docs
   const body = {
     fromToken: payload.fromToken,
     toToken: payload.toToken,
-    amount: Number(payload.amount),
+    amount: String(payload.amount), // API expects string based on example "1.5"
     reason: payload.reason || "TRADE",
-    // competitionId is now REQUIRED by API (always include it)
     competitionId: competitionId || null,
-    // Add chain keys for same-blockchain trading (default to solana if not provided)
-    fromChainKey: fromChain,
-    toChainKey: toChain,
+    // Correct parameter names from API docs
+    fromChain: fromChainData.chain,
+    fromSpecificChain: fromChainData.specificChain,
+    toChain: toChainData.chain,
+    toSpecificChain: toChainData.specificChain,
   };
 
   // Debug logging - VERY VISIBLE
@@ -257,11 +262,13 @@ export async function executeTrade(apiKey, env, competitionId = null, payload) {
   console.error("🔍 TRADE REQUEST DEBUG:");
   console.error("==========================================");
   console.error("Original chains:", payload.fromChainKey, "->", payload.toChainKey);
-  console.error("Mapped chains:", fromChain, "->", toChain);
+  console.error("Mapped chains:", fromChainData, "->", toChainData);
   console.table({
     competitionId: body.competitionId,
-    fromChainKey: body.fromChainKey,
-    toChainKey: body.toChainKey,
+    fromChain: body.fromChain,
+    fromSpecificChain: body.fromSpecificChain,
+    toChain: body.toChain,
+    toSpecificChain: body.toSpecificChain,
     fromToken: body.fromToken,
     toToken: body.toToken,
     amount: body.amount,
