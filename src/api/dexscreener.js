@@ -411,7 +411,7 @@ export function formatPriceChange(change) {
 }
 
 /**
- * Format token price
+ * Format token price with smart decimal handling
  */
 export function formatTokenPrice(price) {
   // Convert to number if it's a string
@@ -419,18 +419,53 @@ export function formatTokenPrice(price) {
 
   if (!numPrice || isNaN(numPrice)) return "$0";
 
+  // For large prices (>= $1000)
   if (numPrice >= 1000) {
     return `$${numPrice.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
-  } else if (numPrice >= 1) {
-    return `$${numPrice.toFixed(4)}`;
-  } else if (numPrice >= 0.0001) {
-    return `$${numPrice.toFixed(6)}`;
-  } else {
-    return `$${numPrice.toExponential(2)}`;
   }
+
+  // For medium prices ($1 - $1000)
+  if (numPrice >= 1) {
+    return `$${numPrice.toFixed(4)}`;
+  }
+
+  // For small prices ($0.01 - $1)
+  if (numPrice >= 0.01) {
+    return `$${numPrice.toFixed(6)}`;
+  }
+
+  // For very small prices (< $0.01)
+  // Calculate number of significant digits needed
+  const priceStr = numPrice.toString();
+
+  // Handle scientific notation from JS
+  if (priceStr.includes('e')) {
+    // Parse scientific notation
+    const [mantissa, exponent] = priceStr.split('e');
+    const exp = parseInt(exponent);
+
+    if (exp < 0) {
+      // Negative exponent - very small number
+      // Show with enough decimals to display actual value
+      const decimals = Math.min(Math.abs(exp) + 2, 12);
+      return `$${numPrice.toFixed(decimals)}`;
+    }
+  }
+
+  // Default: show up to 10 decimals for very small numbers
+  // Remove trailing zeros
+  let formatted = numPrice.toFixed(10);
+  formatted = formatted.replace(/\.?0+$/, '');
+
+  // Ensure we keep at least some decimals
+  if (!formatted.includes('.')) {
+    formatted += '.00';
+  }
+
+  return `$${formatted}`;
 }
 
 /**
