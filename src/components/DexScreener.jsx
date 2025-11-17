@@ -112,6 +112,18 @@ export default function DexScreener({ onQuickTrade }) {
     });
   }, []);
 
+  // Handle column sort
+  const handleSort = useCallback((column) => {
+    if (sortBy === column) {
+      // Toggle sort order if clicking same column
+      setSortOrder(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      // New column - default to descending for numbers, ascending for text
+      setSortBy(column);
+      setSortOrder(column === "token" ? "asc" : "desc");
+    }
+  }, [sortBy]);
+
   // Filter and sort pools
   const sortedPools = useMemo(() => {
     // First, apply filters
@@ -204,18 +216,34 @@ export default function DexScreener({ onQuickTrade }) {
       let aVal, bVal;
 
       switch (sortBy) {
-        case "volume24h":
-          aVal = parseFloat(a.volume24h) || 0;
-          bVal = parseFloat(b.volume24h) || 0;
+        case "token":
+          // Sort alphabetically by token symbol
+          aVal = `${a.baseToken.symbol}/${a.quoteToken.symbol}`.toLowerCase();
+          bVal = `${b.baseToken.symbol}/${b.quoteToken.symbol}`.toLowerCase();
+          return sortOrder === "asc"
+            ? aVal.localeCompare(bVal)
+            : bVal.localeCompare(aVal);
+
+        case "price":
+          aVal = parseFloat(a.price) || 0;
+          bVal = parseFloat(b.price) || 0;
           break;
-        case "liquidity":
-          aVal = parseFloat(a.liquidity) || 0;
-          bVal = parseFloat(b.liquidity) || 0;
-          break;
+
         case "priceChange":
           aVal = parseFloat(a.priceChangePercentage.h24) || 0;
           bVal = parseFloat(b.priceChangePercentage.h24) || 0;
           break;
+
+        case "volume24h":
+          aVal = parseFloat(a.volume24h) || 0;
+          bVal = parseFloat(b.volume24h) || 0;
+          break;
+
+        case "liquidity":
+          aVal = parseFloat(a.liquidity) || 0;
+          bVal = parseFloat(b.liquidity) || 0;
+          break;
+
         default:
           return 0;
       }
@@ -455,13 +483,71 @@ export default function DexScreener({ onQuickTrade }) {
                     <th className="pb-3 pl-4 pr-2 font-semibold sm:pl-0 w-8">
                       ⭐
                     </th>
-                    <th className="px-3 pb-3 font-semibold">
-                      Token
+                    <th
+                      className="px-3 pb-3 font-semibold cursor-pointer hover:text-sky-400 transition-colors select-none"
+                      onClick={() => handleSort("token")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Token
+                        {sortBy === "token" && (
+                          <span className="text-sky-400">
+                            {sortOrder === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-3 pb-3 font-semibold">Price</th>
-                    <th className="px-3 pb-3 font-semibold">24h %</th>
-                    <th className="px-3 pb-3 font-semibold">Volume</th>
-                    <th className="px-3 pb-3 font-semibold">Liquidity</th>
+                    <th
+                      className="px-3 pb-3 font-semibold cursor-pointer hover:text-sky-400 transition-colors select-none"
+                      onClick={() => handleSort("price")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Price
+                        {sortBy === "price" && (
+                          <span className="text-sky-400">
+                            {sortOrder === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="px-3 pb-3 font-semibold cursor-pointer hover:text-sky-400 transition-colors select-none"
+                      onClick={() => handleSort("priceChange")}
+                    >
+                      <div className="flex items-center gap-1">
+                        24h %
+                        {sortBy === "priceChange" && (
+                          <span className="text-sky-400">
+                            {sortOrder === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="px-3 pb-3 font-semibold cursor-pointer hover:text-sky-400 transition-colors select-none"
+                      onClick={() => handleSort("volume24h")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Volume
+                        {sortBy === "volume24h" && (
+                          <span className="text-sky-400">
+                            {sortOrder === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="px-3 pb-3 font-semibold cursor-pointer hover:text-sky-400 transition-colors select-none"
+                      onClick={() => handleSort("liquidity")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Liquidity
+                        {sortBy === "liquidity" && (
+                          <span className="text-sky-400">
+                            {sortOrder === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
                     <th className="px-3 pb-3 font-semibold">Chain</th>
                     <th className="px-3 pb-3 pr-4 font-semibold sm:pr-0">
                       Actions
