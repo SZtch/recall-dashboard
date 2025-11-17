@@ -380,29 +380,6 @@ export default function DexScreener({ onQuickTrade }) {
                 </option>
               ))}
             </select>
-
-            {/* Sort Dropdown */}
-            <select
-              value={sortBy || ""}
-              onChange={(e) => setSortBy(e.target.value || null)}
-              className="rounded-lg border border-neutral-700 bg-neutral-800/50 px-3 py-3 text-sm text-neutral-300 outline-none transition-all hover:bg-neutral-800"
-            >
-              <option value="">Sort by...</option>
-              <option value="volume24h">Volume 24h</option>
-              <option value="liquidity">Liquidity</option>
-              <option value="priceChange">Price Change</option>
-            </select>
-
-            {/* Sort Order Toggle */}
-            {sortBy && (
-              <button
-                onClick={() => setSortOrder(prev => prev === "asc" ? "desc" : "asc")}
-                className="rounded-lg bg-neutral-800/50 px-3 py-3 text-sm text-neutral-300 transition-all hover:bg-neutral-800"
-                title={sortOrder === "asc" ? "Ascending" : "Descending"}
-              >
-                {sortOrder === "asc" ? "↑" : "↓"}
-              </button>
-            )}
           </div>
         </div>
       </div>
