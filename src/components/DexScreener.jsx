@@ -32,13 +32,16 @@ export default function DexScreener({ onQuickTrade }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [pools, setPools] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedPool, setSelectedPool] = useState(null);
+  const [error, setError] = useState(null);
 
   // Fetch data based on mode
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       let results = [];
+
+      console.log('[DexScreener Component] Mode:', mode, 'Chain:', selectedChain, 'Query:', searchQuery);
 
       if (mode === "search" && searchQuery.trim().length >= 2) {
         results = await searchPools(searchQuery);
@@ -48,10 +51,13 @@ export default function DexScreener({ onQuickTrade }) {
         results = await getNewPools(selectedChain);
       }
 
+      console.log('[DexScreener Component] Results:', results);
       setPools(results);
     } catch (error) {
-      console.error("Error fetching pools:", error);
-      showError("Failed to fetch pool data");
+      console.error("[DexScreener Component] Error fetching pools:", error);
+      setError(error.message || "Failed to fetch pool data");
+      showError(error.message || "Failed to fetch pool data");
+      setPools([]);
     } finally {
       setLoading(false);
     }
@@ -169,15 +175,47 @@ export default function DexScreener({ onQuickTrade }) {
         )}
       </div>
 
+      {/* Error State */}
+      {error && !loading && (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4">
+          <div className="flex items-start gap-3">
+            <svg
+              className="h-5 w-5 flex-shrink-0 text-red-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-red-400">Error Loading Data</h3>
+              <p className="mt-1 text-xs text-red-300">{error}</p>
+              <button
+                onClick={fetchData}
+                className="mt-3 rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-400 transition-all hover:bg-red-500/30"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Loading State */}
       {loading && (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex flex-col items-center justify-center py-12">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-700 border-t-sky-400" />
+          <p className="mt-4 text-sm text-neutral-500">Loading pools...</p>
         </div>
       )}
 
       {/* Results */}
-      {!loading && (
+      {!loading && !error && (
         <div>
           {pools.length === 0 ? (
             <div className="flex h-64 items-center justify-center">

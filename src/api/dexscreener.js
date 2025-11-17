@@ -37,6 +37,8 @@ export async function searchPools(query) {
       return [];
     }
 
+    console.log('[DexScreener] Searching pools for:', query);
+
     const response = await fetch(
       `${GECKOTERMINAL_API}/search/pools?query=${encodeURIComponent(query)}`,
       {
@@ -47,21 +49,27 @@ export async function searchPools(query) {
     );
 
     if (!response.ok) {
-      throw new Error(`Search failed: ${response.status}`);
+      const errorText = await response.text();
+      console.error('[DexScreener] Search failed:', response.status, errorText);
+      throw new Error(`Search failed: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('[DexScreener] Search response:', data);
 
     // GeckoTerminal returns: { data: [...pools] }
     if (!data.data || !Array.isArray(data.data)) {
+      console.warn('[DexScreener] No data in response');
       return [];
     }
 
     // Transform to our format
-    return data.data.map(transformPool);
+    const pools = data.data.map(transformPool);
+    console.log('[DexScreener] Transformed pools:', pools.length);
+    return pools;
   } catch (error) {
-    console.error("Error searching pools:", error);
-    return [];
+    console.error("[DexScreener] Error searching pools:", error);
+    throw error;
   }
 }
 
@@ -73,30 +81,37 @@ export async function searchPools(query) {
 export async function getTrendingPools(chainKey = "ethereum") {
   try {
     const networkId = getNetworkId(chainKey);
+    const url = `${GECKOTERMINAL_API}/networks/${networkId}/trending_pools`;
 
-    const response = await fetch(
-      `${GECKOTERMINAL_API}/networks/${networkId}/trending_pools`,
-      {
-        headers: {
-          Accept: "application/json",
-        },
-      }
-    );
+    console.log('[DexScreener] Fetching trending pools:', chainKey, '->', networkId);
+    console.log('[DexScreener] URL:', url);
+
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch trending pools: ${response.status}`);
+      const errorText = await response.text();
+      console.error('[DexScreener] Trending pools failed:', response.status, errorText);
+      throw new Error(`Failed to fetch trending pools: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('[DexScreener] Trending response:', data);
 
     if (!data.data || !Array.isArray(data.data)) {
+      console.warn('[DexScreener] No trending data');
       return [];
     }
 
-    return data.data.map(transformPool);
+    const pools = data.data.map(transformPool);
+    console.log('[DexScreener] Trending pools count:', pools.length);
+    return pools;
   } catch (error) {
-    console.error("Error fetching trending pools:", error);
-    return [];
+    console.error("[DexScreener] Error fetching trending pools:", error);
+    throw error;
   }
 }
 
@@ -108,30 +123,37 @@ export async function getTrendingPools(chainKey = "ethereum") {
 export async function getNewPools(chainKey = "ethereum") {
   try {
     const networkId = getNetworkId(chainKey);
+    const url = `${GECKOTERMINAL_API}/networks/${networkId}/new_pools`;
 
-    const response = await fetch(
-      `${GECKOTERMINAL_API}/networks/${networkId}/new_pools`,
-      {
-        headers: {
-          Accept: "application/json",
-        },
-      }
-    );
+    console.log('[DexScreener] Fetching new pools:', chainKey, '->', networkId);
+    console.log('[DexScreener] URL:', url);
+
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch new pools: ${response.status}`);
+      const errorText = await response.text();
+      console.error('[DexScreener] New pools failed:', response.status, errorText);
+      throw new Error(`Failed to fetch new pools: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('[DexScreener] New pools response:', data);
 
     if (!data.data || !Array.isArray(data.data)) {
+      console.warn('[DexScreener] No new pools data');
       return [];
     }
 
-    return data.data.map(transformPool);
+    const pools = data.data.map(transformPool);
+    console.log('[DexScreener] New pools count:', pools.length);
+    return pools;
   } catch (error) {
-    console.error("Error fetching new pools:", error);
-    return [];
+    console.error("[DexScreener] Error fetching new pools:", error);
+    throw error;
   }
 }
 
