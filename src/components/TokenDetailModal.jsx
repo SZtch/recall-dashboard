@@ -1,7 +1,14 @@
 // src/components/TokenDetailModal.jsx
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { createChart, ColorType } from 'lightweight-charts';
+import {
+  createChart,
+  ColorType,
+  CandlestickSeries,
+  LineSeries,
+  HistogramSeries,
+  LineStyle
+} from 'lightweight-charts';
 import { getPoolOHLCV, formatTokenPrice, formatLargeNumber, formatPriceChange, getPriceChangeColor } from "../api/dexscreener";
 import { showError } from "../utils/toast";
 
@@ -149,9 +156,9 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
       volume: parseFloat(item.volume || 0),
     }));
 
-    // Add candlestick or line series
+    // Add candlestick or line series (v5 API)
     if (chartType === 'candlestick') {
-      const candleSeries = chart.addCandlestickSeries({
+      const candleSeries = chart.addSeries(CandlestickSeries, {
         upColor: '#10b981',
         downColor: '#ef4444',
         borderUpColor: '#10b981',
@@ -162,7 +169,7 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
       candleSeries.setData(formattedData);
       candleSeriesRef.current = candleSeries;
     } else {
-      const lineSeries = chart.addLineSeries({
+      const lineSeries = chart.addSeries(LineSeries, {
         color: pool.priceChangePercentage.h24 >= 0 ? '#10b981' : '#ef4444',
         lineWidth: 2,
       });
@@ -170,9 +177,9 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
       candleSeriesRef.current = lineSeries;
     }
 
-    // Add volume histogram
+    // Add volume histogram (v5 API)
     if (indicators.volume) {
-      const volumeSeries = chart.addHistogramSeries({
+      const volumeSeries = chart.addSeries(HistogramSeries, {
         color: '#3b82f6',
         priceFormat: {
           type: 'volume',
@@ -193,25 +200,25 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
       volumeSeriesRef.current = volumeSeries;
     }
 
-    // Add MA7
+    // Add MA7 (v5 API)
     if (indicators.ma7) {
       const ma7Data = calculateMA(formattedData, 7);
-      const ma7Series = chart.addLineSeries({
+      const ma7Series = chart.addSeries(LineSeries, {
         color: '#eab308',
         lineWidth: 1,
-        lineStyle: 2, // Dashed
+        lineStyle: LineStyle.Dashed,
       });
       ma7Series.setData(ma7Data);
       ma7SeriesRef.current = ma7Series;
     }
 
-    // Add MA25
+    // Add MA25 (v5 API)
     if (indicators.ma25) {
       const ma25Data = calculateMA(formattedData, 25);
-      const ma25Series = chart.addLineSeries({
+      const ma25Series = chart.addSeries(LineSeries, {
         color: '#f97316',
         lineWidth: 1,
-        lineStyle: 2, // Dashed
+        lineStyle: LineStyle.Dashed,
       });
       ma25Series.setData(ma25Data);
       ma25SeriesRef.current = ma25Series;
@@ -289,27 +296,27 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
     // Calculate RSI
     const rsiData = calculateRSI(formattedData, 14);
 
-    // Add RSI line
-    const rsiSeries = rsiChart.addLineSeries({
+    // Add RSI line (v5 API)
+    const rsiSeries = rsiChart.addSeries(LineSeries, {
       color: '#a855f7',
       lineWidth: 2,
     });
     rsiSeries.setData(rsiData);
     rsiSeriesRef.current = rsiSeries;
 
-    // Add overbought line (70)
-    const overboughtSeries = rsiChart.addLineSeries({
+    // Add overbought line (70) (v5 API)
+    const overboughtSeries = rsiChart.addSeries(LineSeries, {
       color: '#ef4444',
       lineWidth: 1,
-      lineStyle: 2,
+      lineStyle: LineStyle.Dashed,
     });
     overboughtSeries.setData(rsiData.map(d => ({ time: d.time, value: 70 })));
 
-    // Add oversold line (30)
-    const oversoldSeries = rsiChart.addLineSeries({
+    // Add oversold line (30) (v5 API)
+    const oversoldSeries = rsiChart.addSeries(LineSeries, {
       color: '#10b981',
       lineWidth: 1,
-      lineStyle: 2,
+      lineStyle: LineStyle.Dashed,
     });
     oversoldSeries.setData(rsiData.map(d => ({ time: d.time, value: 30 })));
 
