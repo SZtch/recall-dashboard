@@ -284,6 +284,13 @@ function transformPool(pool) {
   const attrs = pool.attributes || {};
   const relationships = pool.relationships || {};
 
+  // Log attributes for debugging
+  console.log('[DexScreener] Pool attributes:', {
+    name: attrs.name,
+    transactions: attrs.transactions,
+    volume_usd: attrs.volume_usd,
+  });
+
   // Extract base and quote tokens
   const baseToken = relationships.base_token?.data || {};
   const quoteToken = relationships.quote_token?.data || {};
@@ -345,10 +352,10 @@ function transformPool(pool) {
     fdv: attrs.fdv_usd,
     marketCap: attrs.market_cap_usd,
 
-    // Transaction data
-    txCount24h: attrs.transactions?.h24,
-    buys24h: attrs.transactions?.h24_buys,
-    sells24h: attrs.transactions?.h24_sells,
+    // Transaction data - try multiple field names
+    txCount24h: attrs.transactions?.h24?.count || attrs.tx_count_h24 || null,
+    buys24h: attrs.transactions?.h24?.buys || attrs.buys_h24 || null,
+    sells24h: attrs.transactions?.h24?.sells || attrs.sells_h24 || null,
 
     // Pool metadata
     poolCreatedAt: attrs.pool_created_at,

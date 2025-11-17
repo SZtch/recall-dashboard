@@ -129,12 +129,20 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
             <p className="mt-1 text-lg font-semibold text-neutral-100">{formatLargeNumber(pool.liquidity)}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-neutral-500">24h Buys</p>
-            <p className="mt-1 text-lg font-semibold text-green-400">{pool.buys24h || 'N/A'}</p>
+            <p className="text-xs font-medium text-neutral-500">
+              {pool.buys24h ? '24h Buys' : '24h Txs'}
+            </p>
+            <p className={`mt-1 text-lg font-semibold ${pool.buys24h ? 'text-green-400' : 'text-neutral-300'}`}>
+              {pool.buys24h || pool.txCount24h || 'N/A'}
+            </p>
           </div>
           <div>
-            <p className="text-xs font-medium text-neutral-500">24h Sells</p>
-            <p className="mt-1 text-lg font-semibold text-red-400">{pool.sells24h || 'N/A'}</p>
+            <p className="text-xs font-medium text-neutral-500">
+              {pool.sells24h ? '24h Sells' : 'FDV'}
+            </p>
+            <p className={`mt-1 text-lg font-semibold ${pool.sells24h ? 'text-red-400' : 'text-neutral-300'}`}>
+              {pool.sells24h || (pool.fdv ? formatLargeNumber(pool.fdv) : 'N/A')}
+            </p>
           </div>
         </div>
 
