@@ -68,7 +68,7 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
   const { t } = useTranslation();
 
   const [chartData, setChartData] = useState([]);
-  const [timeframe, setTimeframe] = useState('minute');
+  const [timeframe, setTimeframe] = useState('1H'); // Use label instead of API value
   const [loading, setLoading] = useState(false);
   const [chartType, setChartType] = useState('candlestick');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -78,6 +78,17 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
     volume: true,
     rsi: false,
   });
+
+  // Map timeframe labels to GeckoTerminal API values
+  const timeframeToAPI = {
+    '1M': { value: 'minute', limit: 60 },
+    '5M': { value: 'minute', limit: 100 },
+    '15M': { value: 'minute', limit: 100 },
+    '30M': { value: 'minute', limit: 100 },
+    '1H': { value: 'hour', limit: 100 },
+    '4H': { value: 'hour', limit: 100 },
+    '1D': { value: 'day', limit: 100 },
+  };
 
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
@@ -96,8 +107,14 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
     const fetchChartData = async () => {
       try {
         setLoading(true);
-        const data = await getPoolOHLCV(pool.network, pool.address, timeframe, 100);
-        console.log(`Fetched ${data.length} candles from API`, data.slice(0, 2));
+        const apiConfig = timeframeToAPI[timeframe];
+        const data = await getPoolOHLCV(
+          pool.network,
+          pool.address,
+          apiConfig.value,
+          apiConfig.limit
+        );
+        console.log(`Fetched ${data.length} candles for ${timeframe}`, data.slice(0, 2));
         setChartData(data);
       } catch (error) {
         console.error("Error fetching chart data:", error);
@@ -429,16 +446,8 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
   const currentPrice = pool.price;
   const priceChange24h = pool.priceChangePercentage.h24;
 
-  // Timeframe options
-  const timeframes = [
-    { label: '1M', value: 'minute' },
-    { label: '5M', value: 'minute' },
-    { label: '15M', value: 'minute' },
-    { label: '30M', value: 'minute' },
-    { label: '1H', value: 'hour' },
-    { label: '4H', value: 'hour' },
-    { label: '1D', value: 'day' },
-  ];
+  // Timeframe options (now using labels as values)
+  const timeframes = ['1M', '5M', '15M', '30M', '1H', '4H', '1D'];
 
   const containerClass = isFullscreen
     ? "fixed inset-0 z-[60] bg-black overflow-y-auto"
@@ -558,15 +567,15 @@ export default function TokenDetailModal({ pool, onClose, onBuy, onSell }) {
             <div className="flex gap-1 rounded-lg bg-neutral-800/50 p-1">
               {timeframes.map((tf) => (
                 <button
-                  key={tf.label}
-                  onClick={() => setTimeframe(tf.value)}
+                  key={tf}
+                  onClick={() => setTimeframe(tf)}
                   className={`rounded px-2 py-1 text-xs font-semibold transition-all ${
-                    timeframe === tf.value
+                    timeframe === tf
                       ? 'bg-sky-500 text-black'
                       : 'text-neutral-400 hover:text-neutral-100'
                   }`}
                 >
-                  {tf.label}
+                  {tf}
                 </button>
               ))}
             </div>
