@@ -376,18 +376,15 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
         </div>
 
         {/* Chain Selection */}
-<div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+<div className="mb-5">
   <div>
     <label className="mb-2 block text-xs font-semibold tracking-wide text-neutral-300">
-      From Chain
+      Blockchain
     </label>
     <ChainSelect value={fromChain} onChange={setFromChain} />
-  </div>
-  <div>
-    <label className="mb-2 block text-xs font-semibold tracking-wide text-neutral-300">
-      To Chain
-    </label>
-    <ChainSelect value={toChain} onChange={setToChain} />
+    <p className="mt-1.5 text-xs text-neutral-500">
+      Both tokens will be traded on the same blockchain (cross-chain trading is disabled)
+    </p>
   </div>
 </div>
 
@@ -855,18 +852,15 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
         </div>
 
         {/* Chain Selection */}
-<div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+<div className="mb-5">
   <div>
     <label className="mb-2 block text-xs font-semibold tracking-wide text-neutral-300">
-      From Chain
+      Blockchain
     </label>
     <ChainSelect value={fromChain} onChange={setFromChain} />
-  </div>
-  <div>
-    <label className="mb-2 block text-xs font-semibold tracking-wide text-neutral-300">
-      To Chain
-    </label>
-    <ChainSelect value={toChain} onChange={setToChain} />
+    <p className="mt-1.5 text-xs text-neutral-500">
+      Both tokens will be traded on the same blockchain (cross-chain trading is disabled)
+    </p>
   </div>
 </div>
 
