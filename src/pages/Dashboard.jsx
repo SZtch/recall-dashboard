@@ -211,10 +211,7 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
   const [buyAmount, setBuyAmount] = useState("");
   const [buyReason, setBuyReason] = useState("");
 
-  // Sync toChain with fromChain (cross-chain trading is disabled)
-  useEffect(() => {
-    setToChain(fromChain);
-  }, [fromChain]);
+  // Cross-chain trading is now enabled - user can select different chains
 
   // Pre-fill form when initialData is provided
   useEffect(() => {
@@ -259,7 +256,7 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
           const toastId = showLoading("Executing buy trade...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
-            toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
+            toChainKey: toChain, // Cross-chain enabled
             fromToken: getUSDCAddress(fromChain),
             toToken: buyToToken,
             amount: buyAmount,
@@ -282,7 +279,7 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
             const amt = Math.min(step, total - spent);
             await executeTrade(apiKey, env, competitionId, {
               fromChainKey: fromChain,
-              toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
+              toChainKey: toChain, // Cross-chain enabled
               fromToken: getUSDCAddress(fromChain),
               toToken: batchToToken,
               amount: amt,
@@ -302,7 +299,7 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
           const toastId = showLoading("Executing token swap...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
-            toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
+            toChainKey: toChain, // Cross-chain enabled
             fromToken: t2tFromToken,
             toToken: t2tToToken,
             amount: t2tAmount,
@@ -396,14 +393,23 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
         </div>
 
         {/* Chain Selection */}
-<div className="mb-5">
+<div className="mb-5 grid gap-4 sm:grid-cols-2">
   <div>
     <label className="mb-2 block text-xs font-semibold tracking-wide text-neutral-300">
-      Blockchain
+      From Chain
     </label>
     <ChainSelect value={fromChain} onChange={setFromChain} />
     <p className="mt-1.5 text-xs text-neutral-500">
-      Both tokens will be traded on the same blockchain (cross-chain trading is disabled)
+      Source blockchain for your funds
+    </p>
+  </div>
+  <div>
+    <label className="mb-2 block text-xs font-semibold tracking-wide text-neutral-300">
+      To Chain
+    </label>
+    <ChainSelect value={toChain} onChange={setToChain} />
+    <p className="mt-1.5 text-xs text-neutral-500">
+      Destination blockchain (cross-chain enabled!)
     </p>
   </div>
 </div>
@@ -714,10 +720,7 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
   const [t2tAmount, setT2tAmount] = useState("");
   const [t2tReason, setT2tReason] = useState("");
 
-  // Sync toChain with fromChain (cross-chain trading is disabled)
-  useEffect(() => {
-    setToChain(fromChain);
-  }, [fromChain]);
+  // Cross-chain trading is now enabled - user can select different chains
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -735,9 +738,9 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
           const toastId = showLoading("Executing sell trade...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
-            toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
+            toChainKey: toChain, // Cross-chain enabled
             fromToken: sellToken,
-            toToken: getUSDCAddress(fromChain),
+            toToken: getUSDCAddress(toChain),
             amount: sellAmount,
             reason: sellReason || "SELL",
           });
@@ -758,9 +761,9 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
             const amt = Math.min(step, total - sold);
             await executeTrade(apiKey, env, competitionId, {
               fromChainKey: fromChain,
-              toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
+              toChainKey: toChain, // Cross-chain enabled
               fromToken: batchToken,
-              toToken: getUSDCAddress(fromChain),
+              toToken: getUSDCAddress(toChain),
               amount: amt,
               reason: batchReason || "BATCH SELL",
             });
@@ -778,7 +781,7 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
           const toastId = showLoading("Executing token swap...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
-            toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
+            toChainKey: toChain, // Cross-chain enabled
             fromToken: t2tFromToken,
             toToken: t2tToToken,
             amount: t2tAmount,
@@ -872,14 +875,23 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
         </div>
 
         {/* Chain Selection */}
-<div className="mb-5">
+<div className="mb-5 grid gap-4 sm:grid-cols-2">
   <div>
     <label className="mb-2 block text-xs font-semibold tracking-wide text-neutral-300">
-      Blockchain
+      From Chain
     </label>
     <ChainSelect value={fromChain} onChange={setFromChain} />
     <p className="mt-1.5 text-xs text-neutral-500">
-      Both tokens will be traded on the same blockchain (cross-chain trading is disabled)
+      Source blockchain for your funds
+    </p>
+  </div>
+  <div>
+    <label className="mb-2 block text-xs font-semibold tracking-wide text-neutral-300">
+      To Chain
+    </label>
+    <ChainSelect value={toChain} onChange={setToChain} />
+    <p className="mt-1.5 text-xs text-neutral-500">
+      Destination blockchain (cross-chain enabled!)
     </p>
   </div>
 </div>
