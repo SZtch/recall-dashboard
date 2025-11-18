@@ -58,12 +58,12 @@ async function fetchWithProxy(url, options = {}) {
     });
 
     if (!response.ok) {
-      // Try to parse error response, fallback to text if not JSON
+      // Read response body once as text, then try to parse as JSON
+      const text = await response.text();
       let errorData;
       try {
-        errorData = await response.json();
+        errorData = JSON.parse(text);
       } catch (e) {
-        const text = await response.text();
         errorData = { message: `Non-JSON error response: ${text.substring(0, 200)}` };
       }
       throw new Error(errorData.message || errorData.error || `Proxy request failed: ${response.status}`);
@@ -91,10 +91,12 @@ async function fetchWithProxy(url, options = {}) {
 export async function getBalances(apiKey, env, competitionId = null) {
   const baseUrl = getBaseUrl(env);
 
-  // Add competitionId query parameter if provided (camelCase per API spec)
-  const url = competitionId
-    ? `${baseUrl}/api/agent/balances?competitionId=${encodeURIComponent(competitionId)}`
-    : `${baseUrl}/api/agent/balances`;
+  // competitionId is now REQUIRED by API (always include it)
+  const params = new URLSearchParams();
+  if (competitionId) {
+    params.append('competitionId', competitionId);
+  }
+  const url = `${baseUrl}/api/agent/balances${params.toString() ? '?' + params.toString() : ''}`;
 
   const resp = await fetchWithProxy(url, {
     method: "GET",
@@ -119,10 +121,12 @@ export async function getBalances(apiKey, env, competitionId = null) {
 export async function getHistory(apiKey, env, competitionId = null) {
   const baseUrl = getBaseUrl(env);
 
-  // Add competitionId query parameter if provided (camelCase per API spec)
-  const url = competitionId
-    ? `${baseUrl}/api/agent/trades?competitionId=${encodeURIComponent(competitionId)}`
-    : `${baseUrl}/api/agent/trades`;
+  // competitionId is now REQUIRED by API (always include it)
+  const params = new URLSearchParams();
+  if (competitionId) {
+    params.append('competitionId', competitionId);
+  }
+  const url = `${baseUrl}/api/agent/trades${params.toString() ? '?' + params.toString() : ''}`;
 
   const resp = await fetchWithProxy(url, {
     method: "GET",
@@ -153,10 +157,12 @@ export async function getPnlUnrealized(apiKey, env, competitionId = null) {
   const baseUrl = getBaseUrl(env);
 
   try {
-    // Add competitionId query parameter if provided (camelCase per API spec)
-    const url = competitionId
-      ? `${baseUrl}/api/agent/pnl/unrealized?competitionId=${encodeURIComponent(competitionId)}`
-      : `${baseUrl}/api/agent/pnl/unrealized`;
+    // competitionId is now REQUIRED by API (always include it)
+    const params = new URLSearchParams();
+    if (competitionId) {
+      params.append('competitionId', competitionId);
+    }
+    const url = `${baseUrl}/api/agent/pnl/unrealized${params.toString() ? '?' + params.toString() : ''}`;
 
     const resp = await fetchWithProxy(url, {
       method: "GET",
@@ -192,6 +198,27 @@ export async function getPnlUnrealized(apiKey, env, competitionId = null) {
 }
 
 /**
+ * Map frontend chain identifiers to API-expected format
+ * API expects: fromChain (svm/evm), fromSpecificChain (mainnet/ethereum/base/etc)
+ *
+ * Example from API docs:
+ * - Solana: { chain: "svm", specificChain: "mainnet" }
+ * - Ethereum: { chain: "evm", specificChain: "ethereum" }
+ */
+function mapChainForAPI(chainId) {
+  const mapping = {
+    'solana': { chain: 'svm', specificChain: 'mainnet' },
+    'ethereum': { chain: 'evm', specificChain: 'ethereum' },
+    'base': { chain: 'evm', specificChain: 'base' },
+    'polygon': { chain: 'evm', specificChain: 'polygon' },
+    'optimism': { chain: 'evm', specificChain: 'optimism' },
+    'arbitrum': { chain: 'evm', specificChain: 'arbitrum' },
+    'bsc': { chain: 'evm', specificChain: 'bsc' },
+  };
+  return mapping[chainId] || { chain: 'svm', specificChain: 'mainnet' };
+}
+
+/**
  * Execute trade via Recall API
  * Dipakai di BuyPanel dan SellPanel
  *
@@ -212,19 +239,43 @@ export async function getPnlUnrealized(apiKey, env, competitionId = null) {
 export async function executeTrade(apiKey, env, competitionId = null, payload) {
   const baseUrl = getBaseUrl(env);
 
-  // Kita hanya kirim field yang memang dipakai Recall API
+  // Map chain identifiers to API format
+  const fromChainData = mapChainForAPI(payload.fromChainKey || "solana");
+  const toChainData = mapChainForAPI(payload.toChainKey || "solana");
+
+  // Build request body according to API docs
   const body = {
     fromToken: payload.fromToken,
     toToken: payload.toToken,
-    amount: Number(payload.amount),
+    amount: String(payload.amount), // API expects string based on example "1.5"
     reason: payload.reason || "TRADE",
-    // Add competitionId to body if provided (camelCase per API spec)
-    ...(competitionId && { competitionId: competitionId }),
-    // Kalau nanti Recall menambah dukungan chain routing,
-    // kamu bisa tambahkan:
-    // fromChainKey: payload.fromChainKey,
-    // toChainKey: payload.toChainKey,
+    competitionId: competitionId || null,
+    // Correct parameter names from API docs
+    fromChain: fromChainData.chain,
+    fromSpecificChain: fromChainData.specificChain,
+    toChain: toChainData.chain,
+    toSpecificChain: toChainData.specificChain,
   };
+
+  // Debug logging - VERY VISIBLE
+  console.error("==========================================");
+  console.error("🔍 TRADE REQUEST DEBUG:");
+  console.error("==========================================");
+  console.error("Original chains:", payload.fromChainKey, "->", payload.toChainKey);
+  console.error("Mapped chains:", fromChainData, "->", toChainData);
+  console.table({
+    competitionId: body.competitionId,
+    fromChain: body.fromChain,
+    fromSpecificChain: body.fromSpecificChain,
+    toChain: body.toChain,
+    toSpecificChain: body.toSpecificChain,
+    fromToken: body.fromToken,
+    toToken: body.toToken,
+    amount: body.amount,
+    reason: body.reason,
+  });
+  console.error("FULL BODY:", JSON.stringify(body, null, 2));
+  console.error("==========================================");
 
   const resp = await fetchWithProxy(`${baseUrl}/api/trade/execute`, {
     method: "POST",

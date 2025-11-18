@@ -50,6 +50,20 @@ function mapDexChainToDashboard(dexChain) {
   return mapping[dexChain] || 'solana';
 }
 
+// Get USDC token address for a specific chain
+function getUSDCAddress(chainId) {
+  const usdcAddresses = {
+    'solana': 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    'ethereum': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    'base': '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    'polygon': '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
+    'optimism': '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+    'arbitrum': '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+    'bsc': '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
+  };
+  return usdcAddresses[chainId] || usdcAddresses['solana'];
+}
+
 function normalizeBalances(raw) {
   if (!raw) return [];
   const list = Array.isArray(raw?.balances)
@@ -242,7 +256,7 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
             toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
-            fromToken: "USDC",
+            fromToken: getUSDCAddress(fromChain),
             toToken: buyToToken,
             amount: buyAmount,
             reason: buyReason || "BUY",
@@ -265,7 +279,7 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
             await executeTrade(apiKey, env, competitionId, {
               fromChainKey: fromChain,
               toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
-              fromToken: "USDC",
+              fromToken: getUSDCAddress(fromChain),
               toToken: batchToToken,
               amount: amt,
               reason: batchReason || "BATCH BUY",
@@ -719,7 +733,7 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
             fromChainKey: fromChain,
             toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
             fromToken: sellToken,
-            toToken: "USDC",
+            toToken: getUSDCAddress(fromChain),
             amount: sellAmount,
             reason: sellReason || "SELL",
           });
@@ -742,7 +756,7 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
               fromChainKey: fromChain,
               toChainKey: fromChain, // Must be same as fromChain (cross-chain disabled)
               fromToken: batchToken,
-              toToken: "USDC",
+              toToken: getUSDCAddress(fromChain),
               amount: amt,
               reason: batchReason || "BATCH SELL",
             });
@@ -1794,6 +1808,7 @@ export default function Dashboard() {
                 env={env}
                 agentName={agentName}
                 apiKey={apiKey}
+                competitionId={competitionId}
                 onExecuteTrade={refreshData}
                 onClose={() => setChatbotOpen(false)}
               />
