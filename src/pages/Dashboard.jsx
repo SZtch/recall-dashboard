@@ -102,6 +102,32 @@ function calculateTotalBalance(balances) {
   return balances.reduce((total, balance) => total + balance.usd, 0);
 }
 
+// Check if a chain is an EVM chain (ethereum, base, polygon, optimism, arbitrum, bsc)
+function isEVMChain(chain) {
+  return ['ethereum', 'base', 'polygon', 'optimism', 'arbitrum', 'bsc'].includes(chain);
+}
+
+// Validate cross-chain trade: allow same-chain or EVM-to-EVM, block Solana-to-EVM
+function validateCrossChainTrade(fromChain, toChain) {
+  // Same chain trades are always valid
+  if (fromChain === toChain) {
+    return { valid: true };
+  }
+
+  // Both must be EVM chains for cross-chain trading
+  const bothEVM = isEVMChain(fromChain) && isEVMChain(toChain);
+
+  if (bothEVM) {
+    return { valid: true };
+  }
+
+  // Block cross-chain between Solana and EVM
+  return {
+    valid: false,
+    message: "Cross-chain trading is only supported between EVM chains (Ethereum, Base, Polygon, Optimism, Arbitrum, BSC). Solana cross-chain trades are not supported."
+  };
+}
+
 // ---------------- LOADING SKELETON ----------------
 
 function TableSkeleton({ rows = 5 }) {
@@ -253,6 +279,14 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
           setLoading(false);
           return;
         } else {
+          // Validate cross-chain trade
+          const validation = validateCrossChainTrade(fromChain, toChain);
+          if (!validation.valid) {
+            showError(validation.message);
+            setLoading(false);
+            return;
+          }
+
           const toastId = showLoading("Executing buy trade...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
@@ -273,6 +307,14 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
           setLoading(false);
           return;
         } else {
+          // Validate cross-chain trade
+          const validation = validateCrossChainTrade(fromChain, toChain);
+          if (!validation.valid) {
+            showError(validation.message);
+            setLoading(false);
+            return;
+          }
+
           const toastId = showLoading("Executing batch buy...");
           let spent = 0;
           while (spent + 1e-12 < total) {
@@ -296,6 +338,14 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
           setLoading(false);
           return;
         } else {
+          // Validate cross-chain trade
+          const validation = validateCrossChainTrade(fromChain, toChain);
+          if (!validation.valid) {
+            showError(validation.message);
+            setLoading(false);
+            return;
+          }
+
           const toastId = showLoading("Executing token swap...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
@@ -735,6 +785,14 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
           setLoading(false);
           return;
         } else {
+          // Validate cross-chain trade
+          const validation = validateCrossChainTrade(fromChain, toChain);
+          if (!validation.valid) {
+            showError(validation.message);
+            setLoading(false);
+            return;
+          }
+
           const toastId = showLoading("Executing sell trade...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
@@ -755,6 +813,14 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
           setLoading(false);
           return;
         } else {
+          // Validate cross-chain trade
+          const validation = validateCrossChainTrade(fromChain, toChain);
+          if (!validation.valid) {
+            showError(validation.message);
+            setLoading(false);
+            return;
+          }
+
           const toastId = showLoading("Executing batch sell...");
           let sold = 0;
           while (sold + 1e-12 < total) {
@@ -778,6 +844,14 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
           setLoading(false);
           return;
         } else {
+          // Validate cross-chain trade
+          const validation = validateCrossChainTrade(fromChain, toChain);
+          if (!validation.valid) {
+            showError(validation.message);
+            setLoading(false);
+            return;
+          }
+
           const toastId = showLoading("Executing token swap...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
