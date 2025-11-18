@@ -53,7 +53,7 @@ function mapDexChainToDashboard(dexChain) {
 function getUSDCAddress(chainId) {
   const usdcAddresses = {
     'solana': 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-    'ethereum': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    'ethereum': '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     'base': '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
     'polygon': '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
     'optimism': '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
