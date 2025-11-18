@@ -86,15 +86,26 @@ function normalizeHistory(raw) {
     : Array.isArray(raw)
     ? raw
     : [];
-  return list.map((t, i) => ({
-    id: i,
-    from: t.fromTokenSymbol || "?",
-    to: t.toTokenSymbol || "?",
-    fromAmount: Number(t.fromAmount || 0),
-    toAmount: Number(t.toAmount || 0),
-    reason: t.reason || "-",
-    time: (t.timestamp || "").slice(0, 19),
-  }));
+  return list.map((t, i) => {
+    const fromAmount = Number(t.fromAmount || 0);
+    const toAmount = Number(t.toAmount || 0);
+
+    // Calculate average price: fromAmount / toAmount
+    // This gives the price of 1 TO token in terms of FROM token
+    // Example: 100 USDC -> 0.05 ETH = 2000 USDC per ETH
+    const avgPrice = toAmount > 0 ? fromAmount / toAmount : 0;
+
+    return {
+      id: i,
+      from: t.fromTokenSymbol || "?",
+      to: t.toTokenSymbol || "?",
+      fromAmount,
+      toAmount,
+      avgPrice,
+      reason: t.reason || "-",
+      time: (t.timestamp || "").slice(0, 19),
+    };
+  });
 }
 
 function calculateTotalBalance(balances) {
@@ -1826,6 +1837,9 @@ export default function Dashboard() {
                             <th className="py-3 pr-2 text-right font-semibold sm:pr-4">
                               To
                             </th>
+                            <th className="py-3 pr-2 text-right font-semibold sm:pr-4">
+                              AVG Price
+                            </th>
                             <th className="py-3 pr-2 font-semibold sm:pr-4">Reason</th>
                             <th className="py-3 pr-4 font-semibold">Time</th>
                           </tr>
@@ -1844,6 +1858,9 @@ export default function Dashboard() {
                               </td>
                               <td className="py-4 pr-2 text-right font-mono text-sky-300 sm:pr-4 sm:py-3.5">
                                 {trow.toAmount.toFixed(4)}
+                              </td>
+                              <td className="py-4 pr-2 text-right font-mono text-emerald-300 sm:pr-4 sm:py-3.5">
+                                {trow.avgPrice > 0 ? trow.avgPrice.toFixed(6) : '-'}
                               </td>
                               <td className="py-4 pr-2 text-[10px] text-neutral-400 sm:text-xs sm:pr-4 sm:py-3.5">
                                 {trow.reason}
