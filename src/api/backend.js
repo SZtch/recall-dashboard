@@ -58,12 +58,12 @@ async function fetchWithProxy(url, options = {}) {
     });
 
     if (!response.ok) {
-      // Try to parse error response, fallback to text if not JSON
+      // Read response body once as text, then try to parse as JSON
+      const text = await response.text();
       let errorData;
       try {
-        errorData = await response.json();
+        errorData = JSON.parse(text);
       } catch (e) {
-        const text = await response.text();
         errorData = { message: `Non-JSON error response: ${text.substring(0, 200)}` };
       }
       throw new Error(errorData.message || errorData.error || `Proxy request failed: ${response.status}`);
