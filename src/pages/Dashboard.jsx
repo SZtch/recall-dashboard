@@ -6,7 +6,7 @@ import PolygonIcon from "../assets/chains/polygon.svg";
 import OptimismIcon from "../assets/chains/optimism.svg";
 import ArbitrumIcon from "../assets/chains/arbitrum.svg";
 import BscIcon from "../assets/chains/bsc.svg";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import ApiKeyForm from "../components/ApiKeyForm";
 import ChatbotPanel from "../components/chatbot/ChatbotPanel";
@@ -1299,6 +1299,11 @@ export default function Dashboard() {
   const balanceRows = normalizeBalances(balances);
   const historyRows = normalizeHistory(history);
 
+  // Calculate total balance in USD
+  const totalBalance = useMemo(() => {
+    return balanceRows.reduce((sum, row) => sum + row.usd, 0);
+  }, [balanceRows]);
+
   return (
     <div className="min-h-screen bg-black text-white">
       {/* ============ HERO (NOT CONNECTED) ============ */}
@@ -1445,6 +1450,55 @@ export default function Dashboard() {
           {errorMsg && (
             <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
               ⚠️ {errorMsg}
+            </div>
+          )}
+
+          {/* Total Balance Card */}
+          {isConnected && balanceRows.length > 0 && (
+            <div className="group relative z-10 mb-6 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-sky-500/10 via-neutral-900/40 to-emerald-500/10 shadow-2xl shadow-sky-500/20 backdrop-blur-xl transition-all duration-500 hover:shadow-sky-500/30 sm:rounded-3xl">
+              {/* Glow effects */}
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/60 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
+                <div className="absolute right-0 top-0 h-32 w-32 bg-gradient-to-br from-sky-500/20 to-transparent blur-2xl" />
+                <div className="absolute bottom-0 left-0 h-32 w-32 bg-gradient-to-tr from-emerald-500/20 to-transparent blur-2xl" />
+              </div>
+
+              <div className="relative px-6 py-5 sm:px-8 sm:py-6">
+                <div className="flex flex-col items-center justify-between gap-3 sm:flex-row sm:gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-emerald-500 shadow-lg shadow-sky-500/30">
+                      <svg
+                        className="h-6 w-6 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wider text-neutral-400 sm:text-sm">
+                        Total Portfolio Value
+                      </p>
+                      <p className="mt-1 text-2xl font-bold text-white sm:text-3xl md:text-4xl">
+                        ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-neutral-400 sm:text-sm">
+                    <span className="flex items-center gap-1.5 rounded-lg bg-white/5 px-3 py-1.5 backdrop-blur-sm">
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span>
+                      Live
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
