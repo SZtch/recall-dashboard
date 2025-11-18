@@ -15,7 +15,6 @@ import DexScreener from "../components/DexScreener";
 import {
   getBalances,
   getHistory,
-  getPnlUnrealized,
   executeTrade,
 } from "../api/backend";
 import RecallLogo from "../assets/recall-logo.png";
@@ -95,7 +94,66 @@ function normalizeHistory(raw) {
     toAmount: Number(t.toAmount || 0),
     reason: t.reason || "-",
     time: (t.timestamp || "").slice(0, 19),
+    // Keep raw data for PNL calculation
+    raw: t,
   }));
+}
+
+// Calculate PNL from balances and history
+function calculatePnlFromData(balances, history) {
+  if (!balances || balances.length === 0) return [];
+
+  const positions = [];
+
+  // For each token in balances
+  balances.forEach(balance => {
+    const token = balance.token;
+    const currentAmount = balance.amount;
+    const currentValue = balance.usd;
+
+    if (currentAmount === 0) return; // Skip if no holdings
+
+    // Find all trades for this token from history
+    const buyTrades = history.filter(h => h.to === token && h.raw);
+
+    if (buyTrades.length === 0) {
+      // No buy history found, assume break-even
+      positions.push({
+        token,
+        amount: currentAmount,
+        avgBuy: currentValue / currentAmount,
+        currentValue,
+        pnl: 0,
+      });
+      return;
+    }
+
+    // Calculate weighted average buy price
+    let totalSpent = 0;
+    let totalBought = 0;
+
+    buyTrades.forEach(trade => {
+      const boughtAmount = trade.toAmount;
+      const spentAmount = trade.fromAmount;
+
+      totalBought += boughtAmount;
+      totalSpent += spentAmount;
+    });
+
+    const avgBuyPrice = totalBought > 0 ? totalSpent / totalBought : 0;
+    const costBasis = avgBuyPrice * currentAmount;
+    const pnl = currentValue - costBasis;
+
+    positions.push({
+      token,
+      amount: currentAmount,
+      avgBuy: avgBuyPrice,
+      currentValue,
+      pnl,
+    });
+  });
+
+  return positions;
 }
 
 // ---------------- LOADING SKELETON ----------------
@@ -1226,15 +1284,18 @@ export default function Dashboard() {
         });
       }
 
-      const [bal, his, pnl] = await Promise.all([
+      const [bal, his] = await Promise.all([
         getBalances(key, environment, compId),
         getHistory(key, environment, compId),
-        getPnlUnrealized(key, environment, compId),
       ]);
 
-      setBalances(bal);
-      setHistory(his);
-      setPnlData(pnl);
+      const normalizedBalances = normalizeBalances(bal);
+      const normalizedHistory = normalizeHistory(his);
+      const calculatedPnl = calculatePnlFromData(normalizedBalances, normalizedHistory);
+
+      setBalances(normalizedBalances);
+      setHistory(normalizedHistory);
+      setPnlData(calculatedPnl);
     } catch (err) {
       console.error(err);
       setErrorMsg(
@@ -1249,14 +1310,18 @@ export default function Dashboard() {
     if (!apiKey || !env) return;
     try {
       setRefreshing(true);
-      const [bal, his, pnl] = await Promise.all([
+      const [bal, his] = await Promise.all([
         getBalances(apiKey, env, competitionId),
         getHistory(apiKey, env, competitionId),
-        getPnlUnrealized(apiKey, env, competitionId),
       ]);
-      setBalances(bal);
-      setHistory(his);
-      setPnlData(pnl);
+
+      const normalizedBalances = normalizeBalances(bal);
+      const normalizedHistory = normalizeHistory(his);
+      const calculatedPnl = calculatePnlFromData(normalizedBalances, normalizedHistory);
+
+      setBalances(normalizedBalances);
+      setHistory(normalizedHistory);
+      setPnlData(calculatedPnl);
     } catch (err) {
       console.error("Refresh error", err);
     } finally {
@@ -1296,8 +1361,8 @@ export default function Dashboard() {
     showSuccess("Logged out successfully");
   }
 
-  const balanceRows = normalizeBalances(balances);
-  const historyRows = normalizeHistory(history);
+  const balanceRows = balances || [];
+  const historyRows = history || [];
 
   return (
     <div className="min-h-screen bg-black text-white">
