@@ -5,6 +5,27 @@ import { showSuccess, showError } from "../../utils/toast";
 import { validateTradeBalance } from "../../hooks/useTrade";
 import { getMultipleCryptoPrices, formatPrice, formatChange, formatMarketCap } from "../../api/crypto";
 
+// Helper: Get default chain for common tokens
+function getDefaultChainForToken(tokenSymbol) {
+  const upperToken = tokenSymbol.toUpperCase();
+
+  // Native tokens
+  if (upperToken === "ETH") return "ethereum";
+  if (upperToken === "SOL") return "solana";
+  if (upperToken === "BNB") return "bsc";
+  if (upperToken === "MATIC") return "polygon";
+  if (upperToken === "AVAX") return "avalanche";
+
+  // Stablecoins - default to Ethereum (most liquid)
+  if (["USDC", "USDT", "DAI"].includes(upperToken)) return "ethereum";
+
+  // Solana memecoins
+  if (["BONK", "WIF", "JUP", "PYTH", "JTO"].includes(upperToken)) return "solana";
+
+  // Default to solana for unknown tokens (most common in this dashboard)
+  return "solana";
+}
+
 export default function ChatbotPanel({
   openaiKey,
   onSaveKey,
@@ -89,9 +110,12 @@ Number of positions: ${(pnl || []).length}.`;
       setLoading(true);
       setError("");
 
+      // Determine chain: use provided chain or auto-detect from toToken
+      const chain = tradeParams.chain || getDefaultChainForToken(tradeParams.toToken);
+
       await executeTrade(apiKey, env, competitionId, {
-        fromChainKey: "solana", // Default to solana (cross-chain disabled)
-        toChainKey: "solana", // Must be same as fromChainKey
+        fromChainKey: chain,
+        toChainKey: chain, // Must be same as fromChainKey (cross-chain disabled)
         fromToken: tradeParams.fromToken,
         toToken: tradeParams.toToken,
         amount: parseFloat(tradeParams.amount),
@@ -153,7 +177,7 @@ Number of positions: ${(pnl || []).length}.`;
             {
               role: "system",
               content:
-                "Lu adalah asisten trading crypto yang asik dan gaul. Gaya bahasa lu santai tapi tetep informatif. Gunain bahasa slang Indonesia yang natural kayak: 'gokil', 'mantul', 'anjlok', 'meluncur', 'pumping', 'dumping', 'FOMO', 'hold/hodl', 'bullish', 'bearish', 'to the moon', 'gaspol', 'cuan', 'boncos', 'nyangkut', dll. Jangan terlalu formal. Panggil user dengan 'lu/lo' dan diri sendiri 'gue/gw'. Jawab singkat, to the point, tapi tetep helpful. Kalo ditanya soal harga crypto, fetch data real-time. Kalo execute trade, confirm dulu dengan jelas. Be friendly, be cool, be yourself!",
+                "Lu adalah asisten trading crypto yang asik dan gaul. Gaya bahasa lu santai tapi tetep informatif. Gunain bahasa slang Indonesia yang natural kayak: 'gokil', 'mantul', 'anjlok', 'meluncur', 'pumping', 'dumping', 'FOMO', 'hold/hodl', 'bullish', 'bearish', 'to the moon', 'gaspol', 'cuan', 'boncos', 'nyangkut', dll. Jangan terlalu formal. Panggil user dengan 'lu/lo' dan diri sendiri 'gue/gw'. Jawab singkat, to the point, tapi tetep helpful. Kalo ditanya soal harga crypto, fetch data real-time. Kalo execute trade, confirm dulu dengan jelas.\n\nIMPORTANT - Multi-Chain Trading:\n- Support chains: ethereum, solana, base, polygon, optimism, arbitrum, bsc\n- ETH native token → ethereum chain\n- SOL native token → solana chain\n- Solana memecoins (BONK, WIF, JUP, etc) → solana chain\n- Kalo user gak specify chain, lu auto-detect dari token yang mau dibeli\n- Selalu mention chain yang dipilih saat confirm trade\n\nBe friendly, be cool, be yourself!",
             },
             {
               role: "system",
@@ -167,23 +191,28 @@ Number of positions: ${(pnl || []).length}.`;
               function: {
                 name: "execute_trade",
                 description:
-                  "Execute a trade to swap tokens. Use this when the user wants to buy, sell, or swap tokens.",
+                  "Execute a trade to swap tokens. Use this when the user wants to buy, sell, or swap tokens. IMPORTANT: Auto-detect the correct blockchain based on the token being purchased (toToken). ETH → ethereum, SOL → solana, BONK/WIF → solana, etc.",
                 parameters: {
                   type: "object",
                   properties: {
                     fromToken: {
                       type: "string",
                       description:
-                        "The token to sell/swap from (e.g., USDC, ETH, SOL)",
+                        "The token to sell/swap from (e.g., USDC, ETH, SOL). Can be token symbol or contract address.",
                     },
                     toToken: {
                       type: "string",
                       description:
-                        "The token to buy/swap to (e.g., USDC, ETH, SOL)",
+                        "The token to buy/swap to (e.g., USDC, ETH, SOL). Can be token symbol or contract address.",
                     },
                     amount: {
                       type: "string",
                       description: "The amount of fromToken to trade",
+                    },
+                    chain: {
+                      type: "string",
+                      description: "Optional. Blockchain to execute trade on. Options: ethereum, solana, base, polygon, optimism, arbitrum, bsc. If not specified, will auto-detect from toToken.",
+                      enum: ["ethereum", "solana", "base", "polygon", "optimism", "arbitrum", "bsc"],
                     },
                     reason: {
                       type: "string",
@@ -296,13 +325,14 @@ Number of positions: ${(pnl || []).length}.`;
               },
             ]);
           } else {
-            // Show confirmation dialog
+            // Show confirmation dialog with chain info
+            const detectedChain = tradeParams.chain || getDefaultChainForToken(tradeParams.toToken);
             setPendingTrade(tradeParams);
             setMessages([
               ...newMessages,
               {
                 role: "assistant",
-                content: `I want to execute this trade for you:\n\n📊 **Trade Details:**\n• Sell: ${tradeParams.amount} ${tradeParams.fromToken}\n• Buy: ${tradeParams.toToken}\n• Reason: ${tradeParams.reason || "User requested"}\n\nPlease confirm to proceed.`,
+                content: `I want to execute this trade for you:\n\n📊 **Trade Details:**\n• Sell: ${tradeParams.amount} ${tradeParams.fromToken}\n• Buy: ${tradeParams.toToken}\n• Chain: ${detectedChain.toUpperCase()}\n• Reason: ${tradeParams.reason || "User requested"}\n\nPlease confirm to proceed.`,
               },
             ]);
           }
@@ -498,6 +528,12 @@ Number of positions: ${(pnl || []).length}.`;
               <span className="text-neutral-400">To:</span>
               <span className="font-semibold text-neutral-100">
                 {pendingTrade.toToken}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-neutral-400">Chain:</span>
+              <span className="font-semibold text-sky-300 uppercase">
+                {pendingTrade.chain || getDefaultChainForToken(pendingTrade.toToken)}
               </span>
             </div>
             {pendingTrade.reason && (
