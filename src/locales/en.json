@@ -32,7 +32,7 @@
   "tabs": {
     "balances": "Balances",
     "history": "History",
-    "pnl": "PNL",
+    "pnl": "Portfolio",
     "buy": "Buy",
     "sell": "Sell",
     "verify": "Verify"
@@ -59,12 +59,12 @@
     "emptyDescription": "Trade history will appear here once you start trading."
   },
   "pnl": {
-    "title": "Unrealized PNL",
+    "title": "Portfolio",
     "token": "Token",
     "amount": "Amount",
     "value": "Value (USD)",
     "pnl": "Unrealized PNL",
-    "noPnl": "No unrealized PNL",
+    "noPnl": "No positions",
     "emptyDescription": "Open positions will show up here."
   },
   "trade": {

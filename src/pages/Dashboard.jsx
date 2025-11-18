@@ -15,7 +15,6 @@ import DexScreener from "../components/DexScreener";
 import {
   getBalances,
   getHistory,
-  getPnlUnrealized,
   executeTrade,
 } from "../api/backend";
 import RecallLogo from "../assets/recall-logo.png";
@@ -1226,15 +1225,16 @@ export default function Dashboard() {
         });
       }
 
-      const [bal, his, pnl] = await Promise.all([
+      const [bal, his] = await Promise.all([
         getBalances(key, environment, compId),
         getHistory(key, environment, compId),
-        getPnlUnrealized(key, environment, compId),
       ]);
 
-      setBalances(bal);
-      setHistory(his);
-      setPnlData(pnl);
+      const normalizedBalances = normalizeBalances(bal);
+      const normalizedHistory = normalizeHistory(his);
+
+      setBalances(normalizedBalances);
+      setHistory(normalizedHistory);
     } catch (err) {
       console.error(err);
       setErrorMsg(
@@ -1249,14 +1249,16 @@ export default function Dashboard() {
     if (!apiKey || !env) return;
     try {
       setRefreshing(true);
-      const [bal, his, pnl] = await Promise.all([
+      const [bal, his] = await Promise.all([
         getBalances(apiKey, env, competitionId),
         getHistory(apiKey, env, competitionId),
-        getPnlUnrealized(apiKey, env, competitionId),
       ]);
-      setBalances(bal);
-      setHistory(his);
-      setPnlData(pnl);
+
+      const normalizedBalances = normalizeBalances(bal);
+      const normalizedHistory = normalizeHistory(his);
+
+      setBalances(normalizedBalances);
+      setHistory(normalizedHistory);
     } catch (err) {
       console.error("Refresh error", err);
     } finally {
@@ -1296,8 +1298,8 @@ export default function Dashboard() {
     showSuccess("Logged out successfully");
   }
 
-  const balanceRows = normalizeBalances(balances);
-  const historyRows = normalizeHistory(history);
+  const balanceRows = balances || [];
+  const historyRows = history || [];
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -1487,19 +1489,6 @@ export default function Dashboard() {
                   <span className="relative">{t('tabs.history')}</span>
                 </button>
                 <button
-                  onClick={() => setActiveTab("pnl")}
-                  className={`group/tab relative flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all duration-300 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
-                    activeTab === "pnl"
-                      ? "bg-gradient-to-r from-sky-500 to-blue-500 text-black shadow-lg shadow-sky-500/40"
-                      : "text-neutral-400 hover:bg-white/5 hover:text-neutral-100"
-                  }`}
-                >
-                  {activeTab === "pnl" && (
-                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-sky-500 to-blue-500 opacity-50 blur-lg" />
-                  )}
-                  <span className="relative">{t('tabs.pnl')}</span>
-                </button>
-                <button
                   onClick={() => setActiveTab("buy")}
                   className={`group/tab relative flex-1 whitespace-nowrap rounded-lg px-3 py-2 transition-all duration-300 active:scale-95 sm:px-4 sm:py-2.5 md:flex-none md:px-4 ${
                     activeTab === "buy"
@@ -1681,64 +1670,6 @@ export default function Dashboard() {
                               </td>
                               <td className="py-4 pr-4 text-[10px] text-neutral-500 sm:text-xs sm:py-3.5">
                                 {trow.time}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === "pnl" && (
-                <div>
-                  {pnlData.length > 0 && (
-                    <div className="mt-5 overflow-x-auto -mx-4 sm:mx-0 sm:mt-6">
-                      <table className="w-full min-w-[650px] text-xs sm:min-w-0 sm:text-sm">
-                        <thead className="border-b border-neutral-800 text-[10px] uppercase tracking-wider text-neutral-500 sm:text-[11px]">
-                          <tr className="text-left">
-                            <th className="py-3 pl-4 font-semibold sm:pl-0">Token</th>
-                            <th className="py-3 pr-2 text-right font-semibold sm:pr-4">
-                              Amount
-                            </th>
-                            <th className="py-3 pr-2 text-right font-semibold sm:pr-4">
-                              Avg Buy
-                            </th>
-                            <th className="py-3 pr-2 text-right font-semibold sm:pr-4">
-                              Current Value
-                            </th>
-                            <th className="py-3 pr-4 text-right font-semibold">
-                              PNL
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {pnlData.map((p, i) => (
-                            <tr
-                              key={i}
-                              className="border-b border-neutral-900/60 transition-colors active:bg-neutral-900/60 hover:bg-neutral-900/40"
-                            >
-                              <td className="py-4 pl-4 font-semibold text-neutral-100 sm:pl-0 sm:py-3.5">
-                                {p.token}
-                              </td>
-                              <td className="py-4 pr-2 text-right font-mono text-neutral-300 sm:pr-4 sm:py-3.5">
-                                {p.amount.toFixed(4)}
-                              </td>
-                              <td className="py-4 pr-2 text-right font-mono text-neutral-300 sm:pr-4 sm:py-3.5">
-                                ${p.avgBuy.toFixed(4)}
-                              </td>
-                              <td className="py-4 pr-2 text-right font-mono text-sky-300 sm:pr-4 sm:py-3.5">
-                                ${p.currentValue.toFixed(2)}
-                              </td>
-                              <td
-                                className={`py-4 pr-4 text-right font-mono font-semibold sm:py-3.5 ${
-                                  p.pnl >= 0
-                                    ? "text-emerald-400"
-                                    : "text-rose-400"
-                                }`}
-                              >
-                                {p.pnl >= 0 ? "+" : ""}${p.pnl.toFixed(2)}
                               </td>
                             </tr>
                           ))}
