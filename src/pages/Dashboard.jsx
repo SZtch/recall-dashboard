@@ -97,6 +97,11 @@ function normalizeHistory(raw) {
   }));
 }
 
+function calculateTotalBalance(balances) {
+  if (!balances || balances.length === 0) return 0;
+  return balances.reduce((total, balance) => total + balance.usd, 0);
+}
+
 // ---------------- LOADING SKELETON ----------------
 
 function TableSkeleton({ rows = 5 }) {
@@ -1175,6 +1180,7 @@ export default function Dashboard() {
   const [balances, setBalances] = useState(null);
   const [history, setHistory] = useState(null);
   const [pnlData, setPnlData] = useState([]);
+  const [totalBalance, setTotalBalance] = useState(0);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -1235,6 +1241,7 @@ export default function Dashboard() {
 
       setBalances(normalizedBalances);
       setHistory(normalizedHistory);
+      setTotalBalance(calculateTotalBalance(normalizedBalances));
     } catch (err) {
       console.error(err);
       setErrorMsg(
@@ -1259,6 +1266,7 @@ export default function Dashboard() {
 
       setBalances(normalizedBalances);
       setHistory(normalizedHistory);
+      setTotalBalance(calculateTotalBalance(normalizedBalances));
     } catch (err) {
       console.error("Refresh error", err);
     } finally {
@@ -1449,6 +1457,92 @@ export default function Dashboard() {
               ⚠️ {errorMsg}
             </div>
           )}
+
+          {/* Total Balance Display */}
+          <div className="relative z-10 mb-4 overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-neutral-900/60 via-neutral-950/50 to-black/60 p-4 shadow-lg backdrop-blur-xl transition-all duration-300 hover:border-sky-400/30 hover:shadow-sky-500/10 sm:mb-5 sm:rounded-2xl sm:p-5 md:mb-6 md:p-6">
+            {/* Gradient overlay */}
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/50 to-transparent" />
+              <div className="absolute right-0 top-0 h-32 w-32 bg-gradient-to-br from-sky-500/10 to-transparent blur-2xl" />
+            </div>
+
+            <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="mb-1 flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/10">
+                    <svg
+                      className="h-4 w-4 text-sky-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-xs font-bold uppercase tracking-[0.15em] text-neutral-400 sm:text-sm">
+                    Total Portfolio Value
+                  </p>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <h2 className="bg-gradient-to-r from-sky-400 via-blue-400 to-emerald-400 bg-clip-text text-3xl font-black tracking-tight text-transparent sm:text-4xl md:text-5xl">
+                    ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </h2>
+                  {refreshing && (
+                    <svg
+                      className="h-4 w-4 animate-spin text-sky-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-neutral-500">
+                  Combined value across all chains
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={refreshData}
+                  disabled={refreshing}
+                  className="flex items-center gap-1.5 rounded-lg border border-neutral-700/60 bg-neutral-900/60 px-3 py-2 text-xs font-medium text-neutral-300 transition-all duration-200 hover:border-sky-400/60 hover:bg-neutral-900/90 hover:text-sky-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <svg
+                    className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  <span className="hidden sm:inline">Refresh</span>
+                </button>
+              </div>
+            </div>
+          </div>
 
           <section className="group relative z-10 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-neutral-900/40 via-neutral-950/60 to-black/80 shadow-2xl shadow-black/50 backdrop-blur-xl transition-all duration-500 hover:shadow-sky-500/10 sm:rounded-3xl">
             {/* Multi-layer glow effects */}
