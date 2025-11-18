@@ -4,19 +4,77 @@ import { executeTrade } from "../../api/backend";
 import { showSuccess, showError } from "../../utils/toast";
 import { validateTradeBalance } from "../../hooks/useTrade";
 import { getMultipleCryptoPrices, formatPrice, formatChange, formatMarketCap } from "../../api/crypto";
+import { searchPools } from "../../api/dexscreener";
 
-// Helper: Get contract address for token on specific chain
-function getTokenAddress(tokenSymbol, chain) {
+// In-memory cache for fetched token addresses
+const tokenAddressCache = new Map();
+
+// Helper: Fetch token address from API using GeckoTerminal search
+async function fetchTokenAddressFromAPI(tokenSymbol, chain) {
+  try {
+    // Search for the token
+    const results = await searchPools(tokenSymbol);
+
+    if (!results || results.length === 0) {
+      return null;
+    }
+
+    // Map chain names to network IDs
+    const chainToNetwork = {
+      ethereum: 'eth',
+      optimism: 'optimism',
+      base: 'base',
+      arbitrum: 'arbitrum',
+      polygon: 'polygon_pos',
+      bsc: 'bsc',
+      solana: 'solana',
+    };
+
+    const targetNetwork = chainToNetwork[chain];
+    if (!targetNetwork) return null;
+
+    // Find pool on the correct network
+    const poolOnChain = results.find(pool => pool.network === targetNetwork);
+
+    if (!poolOnChain) {
+      return null;
+    }
+
+    // Check if base token matches (case insensitive)
+    const upperSymbol = tokenSymbol.toUpperCase();
+    if (poolOnChain.baseToken?.symbol?.toUpperCase() === upperSymbol) {
+      return poolOnChain.baseToken.address;
+    }
+
+    // Check if quote token matches
+    if (poolOnChain.quoteToken?.symbol?.toUpperCase() === upperSymbol) {
+      return poolOnChain.quoteToken.address;
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`Failed to fetch token address for ${tokenSymbol} on ${chain}:`, error);
+    return null;
+  }
+}
+
+// Helper: Get contract address for token on specific chain (with API fallback)
+async function getTokenAddress(tokenSymbol, chain) {
   const upperToken = tokenSymbol.toUpperCase();
 
-  // Token addresses by chain
+  // 1. Check if it's already an address (starts with 0x or looks like Solana address)
+  if (tokenSymbol.startsWith('0x') || tokenSymbol.length > 30) {
+    return tokenSymbol;
+  }
+
+  // 2. Try hardcoded addresses first (fastest)
   const addresses = {
     ethereum: {
       USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
       USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
       DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
       WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-      ETH: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", // Native ETH placeholder
+      ETH: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
     },
     optimism: {
       USDC: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
@@ -42,7 +100,7 @@ function getTokenAddress(tokenSymbol, chain) {
       USDT: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
       DAI: "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
       WMATIC: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
-      MATIC: "0x0000000000000000000000000000000000001010", // Native MATIC
+      MATIC: "0x0000000000000000000000000000000000001010",
     },
     bsc: {
       USDC: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
@@ -61,8 +119,29 @@ function getTokenAddress(tokenSymbol, chain) {
     },
   };
 
-  // Return address if found, otherwise return the symbol (might be an address already)
-  return addresses[chain]?.[upperToken] || tokenSymbol;
+  const hardcodedAddress = addresses[chain]?.[upperToken];
+  if (hardcodedAddress) {
+    return hardcodedAddress;
+  }
+
+  // 3. Check cache
+  const cacheKey = `${chain}:${upperToken}`;
+  if (tokenAddressCache.has(cacheKey)) {
+    return tokenAddressCache.get(cacheKey);
+  }
+
+  // 4. Fetch from API as fallback
+  console.log(`Fetching address for ${tokenSymbol} on ${chain} from API...`);
+  const fetchedAddress = await fetchTokenAddressFromAPI(tokenSymbol, chain);
+
+  if (fetchedAddress) {
+    // Cache the result
+    tokenAddressCache.set(cacheKey, fetchedAddress);
+    return fetchedAddress;
+  }
+
+  // 5. Return symbol as last resort (might be an address or unknown token)
+  return tokenSymbol;
 }
 
 // Helper: Get default chain for common tokens
@@ -174,8 +253,11 @@ Number of positions: ${(pnl || []).length}.`;
       const chain = tradeParams.chain || getDefaultChainForToken(tradeParams.toToken);
 
       // Convert token symbols to contract addresses for the specific chain
-      const fromTokenAddress = getTokenAddress(tradeParams.fromToken, chain);
-      const toTokenAddress = getTokenAddress(tradeParams.toToken, chain);
+      // This may fetch from API if not in hardcoded mapping
+      const fromTokenAddress = await getTokenAddress(tradeParams.fromToken, chain);
+      const toTokenAddress = await getTokenAddress(tradeParams.toToken, chain);
+
+      console.log(`Trading: ${tradeParams.fromToken} (${fromTokenAddress}) → ${tradeParams.toToken} (${toTokenAddress}) on ${chain}`);
 
       await executeTrade(apiKey, env, competitionId, {
         fromChainKey: chain,
