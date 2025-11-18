@@ -5,15 +5,75 @@ import { showSuccess, showError } from "../../utils/toast";
 import { validateTradeBalance } from "../../hooks/useTrade";
 import { getMultipleCryptoPrices, formatPrice, formatChange, formatMarketCap } from "../../api/crypto";
 
+// Helper: Get contract address for token on specific chain
+function getTokenAddress(tokenSymbol, chain) {
+  const upperToken = tokenSymbol.toUpperCase();
+
+  // Token addresses by chain
+  const addresses = {
+    ethereum: {
+      USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+      WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      ETH: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", // Native ETH placeholder
+    },
+    optimism: {
+      USDC: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
+      USDT: "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58",
+      DAI: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+      WETH: "0x4200000000000000000000000000000000000006",
+      ETH: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+    },
+    base: {
+      USDC: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      WETH: "0x4200000000000000000000000000000000000006",
+      ETH: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+    },
+    arbitrum: {
+      USDC: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      USDT: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+      DAI: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+      WETH: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      ETH: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+    },
+    polygon: {
+      USDC: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+      USDT: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+      DAI: "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
+      WMATIC: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+      MATIC: "0x0000000000000000000000000000000000001010", // Native MATIC
+    },
+    bsc: {
+      USDC: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+      USDT: "0x55d398326f99059fF775485246999027B3197955",
+      BUSD: "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
+      WBNB: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+      BNB: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+    },
+    solana: {
+      USDC: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      USDT: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+      SOL: "So11111111111111111111111111111111111111112",
+      BONK: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+      WIF: "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+      JUP: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+    },
+  };
+
+  // Return address if found, otherwise return the symbol (might be an address already)
+  return addresses[chain]?.[upperToken] || tokenSymbol;
+}
+
 // Helper: Get default chain for common tokens
 function getDefaultChainForToken(tokenSymbol) {
   const upperToken = tokenSymbol.toUpperCase();
 
   // Native tokens
-  if (upperToken === "ETH") return "ethereum";
+  if (upperToken === "ETH" || upperToken === "WETH") return "ethereum";
   if (upperToken === "SOL") return "solana";
-  if (upperToken === "BNB") return "bsc";
-  if (upperToken === "MATIC") return "polygon";
+  if (upperToken === "BNB" || upperToken === "WBNB") return "bsc";
+  if (upperToken === "MATIC" || upperToken === "WMATIC") return "polygon";
   if (upperToken === "AVAX") return "avalanche";
 
   // Stablecoins - default to Ethereum (most liquid)
@@ -113,11 +173,15 @@ Number of positions: ${(pnl || []).length}.`;
       // Determine chain: use provided chain or auto-detect from toToken
       const chain = tradeParams.chain || getDefaultChainForToken(tradeParams.toToken);
 
+      // Convert token symbols to contract addresses for the specific chain
+      const fromTokenAddress = getTokenAddress(tradeParams.fromToken, chain);
+      const toTokenAddress = getTokenAddress(tradeParams.toToken, chain);
+
       await executeTrade(apiKey, env, competitionId, {
         fromChainKey: chain,
         toChainKey: chain, // Must be same as fromChainKey (cross-chain disabled)
-        fromToken: tradeParams.fromToken,
-        toToken: tradeParams.toToken,
+        fromToken: fromTokenAddress,
+        toToken: toTokenAddress,
         amount: parseFloat(tradeParams.amount),
         reason: tradeParams.reason || "CHATBOT_TRADE",
       });
@@ -177,7 +241,7 @@ Number of positions: ${(pnl || []).length}.`;
             {
               role: "system",
               content:
-                "Lu adalah asisten trading crypto yang asik dan gaul. Gaya bahasa lu santai tapi tetep informatif. Gunain bahasa slang Indonesia yang natural kayak: 'gokil', 'mantul', 'anjlok', 'meluncur', 'pumping', 'dumping', 'FOMO', 'hold/hodl', 'bullish', 'bearish', 'to the moon', 'gaspol', 'cuan', 'boncos', 'nyangkut', dll. Jangan terlalu formal. Panggil user dengan 'lu/lo' dan diri sendiri 'gue/gw'. Jawab singkat, to the point, tapi tetep helpful. Kalo ditanya soal harga crypto, fetch data real-time. Kalo execute trade, confirm dulu dengan jelas.\n\nIMPORTANT - Multi-Chain Trading:\n- Support chains: ethereum, solana, base, polygon, optimism, arbitrum, bsc\n- ETH native token → ethereum chain\n- SOL native token → solana chain\n- Solana memecoins (BONK, WIF, JUP, etc) → solana chain\n- Kalo user gak specify chain, lu auto-detect dari token yang mau dibeli\n- Selalu mention chain yang dipilih saat confirm trade\n\nBe friendly, be cool, be yourself!",
+                "Lu adalah asisten trading crypto yang asik dan gaul. Gaya bahasa lu santai tapi tetep informatif. Gunain bahasa slang Indonesia yang natural kayak: 'gokil', 'mantul', 'anjlok', 'meluncur', 'pumping', 'dumping', 'FOMO', 'hold/hodl', 'bullish', 'bearish', 'to the moon', 'gaspol', 'cuan', 'boncos', 'nyangkut', dll. Jangan terlalu formal. Panggil user dengan 'lu/lo' dan diri sendiri 'gue/gw'. Jawab singkat, to the point, tapi tetep helpful. Kalo ditanya soal harga crypto, fetch data real-time. Kalo execute trade, confirm dulu dengan jelas.\n\nIMPORTANT - Multi-Chain Trading:\n- Support chains: ethereum, solana, base, polygon, optimism, arbitrum, bsc\n- Supported tokens per chain:\n  * Ethereum: ETH, WETH, USDC, USDT, DAI\n  * Optimism: ETH, WETH, USDC, USDT, DAI\n  * Base: ETH, WETH, USDC\n  * Arbitrum: ETH, WETH, USDC, USDT, DAI\n  * Polygon: MATIC, WMATIC, USDC, USDT, DAI\n  * BSC: BNB, WBNB, USDC, USDT, BUSD\n  * Solana: SOL, USDC, USDT, BONK, WIF, JUP\n- Kalo user gak specify chain, lu auto-detect dari token yang mau dibeli\n- Selalu mention chain yang dipilih saat confirm trade\n- Pake token symbol aja (ETH, SOL, USDC, dll) - sistem auto-convert ke contract address\n\nBe friendly, be cool, be yourself!",
             },
             {
               role: "system",
