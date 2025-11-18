@@ -249,19 +249,21 @@ Number of positions: ${(pnl || []).length}.`;
       setLoading(true);
       setError("");
 
-      // Determine chain: use provided chain or auto-detect from toToken
-      const chain = tradeParams.chain || getDefaultChainForToken(tradeParams.toToken);
+      // Determine chains: use provided or auto-detect
+      const fromChain = tradeParams.fromChain || getDefaultChainForToken(tradeParams.fromToken);
+      const toChain = tradeParams.toChain || getDefaultChainForToken(tradeParams.toToken);
 
-      // Convert token symbols to contract addresses for the specific chain
+      // Convert token symbols to contract addresses for their respective chains
       // This may fetch from API if not in hardcoded mapping
-      const fromTokenAddress = await getTokenAddress(tradeParams.fromToken, chain);
-      const toTokenAddress = await getTokenAddress(tradeParams.toToken, chain);
+      const fromTokenAddress = await getTokenAddress(tradeParams.fromToken, fromChain);
+      const toTokenAddress = await getTokenAddress(tradeParams.toToken, toChain);
 
-      console.log(`Trading: ${tradeParams.fromToken} (${fromTokenAddress}) → ${tradeParams.toToken} (${toTokenAddress}) on ${chain}`);
+      const isCrossChain = fromChain !== toChain;
+      console.log(`Trading: ${tradeParams.fromToken} (${fromTokenAddress}) on ${fromChain} → ${tradeParams.toToken} (${toTokenAddress}) on ${toChain}${isCrossChain ? ' [CROSS-CHAIN]' : ''}`);
 
       await executeTrade(apiKey, env, competitionId, {
-        fromChainKey: chain,
-        toChainKey: chain, // Must be same as fromChainKey (cross-chain disabled)
+        fromChainKey: fromChain,
+        toChainKey: toChain, // Cross-chain enabled!
         fromToken: fromTokenAddress,
         toToken: toTokenAddress,
         amount: parseFloat(tradeParams.amount),
@@ -323,7 +325,7 @@ Number of positions: ${(pnl || []).length}.`;
             {
               role: "system",
               content:
-                "Lu adalah asisten trading crypto yang asik dan gaul. Gaya bahasa lu santai tapi tetep informatif. Gunain bahasa slang Indonesia yang natural kayak: 'gokil', 'mantul', 'anjlok', 'meluncur', 'pumping', 'dumping', 'FOMO', 'hold/hodl', 'bullish', 'bearish', 'to the moon', 'gaspol', 'cuan', 'boncos', 'nyangkut', dll. Jangan terlalu formal. Panggil user dengan 'lu/lo' dan diri sendiri 'gue/gw'. Jawab singkat, to the point, tapi tetep helpful. Kalo ditanya soal harga crypto, fetch data real-time. Kalo execute trade, confirm dulu dengan jelas.\n\nIMPORTANT - Multi-Chain Trading:\n- Support chains: ethereum, solana, base, polygon, optimism, arbitrum, bsc\n- Supported tokens per chain:\n  * Ethereum: ETH, WETH, USDC, USDT, DAI\n  * Optimism: ETH, WETH, USDC, USDT, DAI\n  * Base: ETH, WETH, USDC\n  * Arbitrum: ETH, WETH, USDC, USDT, DAI\n  * Polygon: MATIC, WMATIC, USDC, USDT, DAI\n  * BSC: BNB, WBNB, USDC, USDT, BUSD\n  * Solana: SOL, USDC, USDT, BONK, WIF, JUP\n- Kalo user gak specify chain, lu auto-detect dari token yang mau dibeli\n- Selalu mention chain yang dipilih saat confirm trade\n- Pake token symbol aja (ETH, SOL, USDC, dll) - sistem auto-convert ke contract address\n\nBe friendly, be cool, be yourself!",
+                "Lu adalah asisten trading crypto yang asik dan gaul. Gaya bahasa lu santai tapi tetep informatif. Gunain bahasa slang Indonesia yang natural kayak: 'gokil', 'mantul', 'anjlok', 'meluncur', 'pumping', 'dumping', 'FOMO', 'hold/hodl', 'bullish', 'bearish', 'to the moon', 'gaspol', 'cuan', 'boncos', 'nyangkut', dll. Jangan terlalu formal. Panggil user dengan 'lu/lo' dan diri sendiri 'gue/gw'. Jawab singkat, to the point, tapi tetep helpful. Kalo ditanya soal harga crypto, fetch data real-time. Kalo execute trade, confirm dulu dengan jelas.\n\nIMPORTANT - Cross-Chain Trading:\n- CROSS-CHAIN TRADING SEKARANG SUPPORTED! User bisa trade dari chain manapun ke chain manapun\n- Support chains: ethereum, solana, base, polygon, optimism, arbitrum, bsc\n- Supported tokens per chain:\n  * Ethereum: ETH, WETH, USDC, USDT, DAI\n  * Optimism: ETH, WETH, USDC, USDT, DAI\n  * Base: ETH, WETH, USDC\n  * Arbitrum: ETH, WETH, USDC, USDT, DAI\n  * Polygon: MATIC, WMATIC, USDC, USDT, DAI\n  * BSC: BNB, WBNB, USDC, USDT, BUSD\n  * Solana: SOL, USDC, USDT, BONK, WIF, JUP\n- Auto-detect chain dari token symbol (ETH → ethereum, SOL → solana, etc)\n- User bisa bilang: \"Beli ETH di Ethereum pakai USDC dari Solana\" → cross-chain!\n- Selalu mention chains (from & to) saat confirm trade\n- Pake token symbol aja - sistem auto-convert ke contract address\n\nBe friendly, be cool, be yourself!",
             },
             {
               role: "system",
@@ -337,7 +339,7 @@ Number of positions: ${(pnl || []).length}.`;
               function: {
                 name: "execute_trade",
                 description:
-                  "Execute a trade to swap tokens. Use this when the user wants to buy, sell, or swap tokens. IMPORTANT: Auto-detect the correct blockchain based on the token being purchased (toToken). ETH → ethereum, SOL → solana, BONK/WIF → solana, etc.",
+                  "Execute a trade to swap tokens, including cross-chain swaps. Use this when the user wants to buy, sell, or swap tokens across any blockchain. The system will auto-detect chains from token symbols.",
                 parameters: {
                   type: "object",
                   properties: {
@@ -355,9 +357,14 @@ Number of positions: ${(pnl || []).length}.`;
                       type: "string",
                       description: "The amount of fromToken to trade",
                     },
-                    chain: {
+                    fromChain: {
                       type: "string",
-                      description: "Optional. Blockchain to execute trade on. Options: ethereum, solana, base, polygon, optimism, arbitrum, bsc. If not specified, will auto-detect from toToken.",
+                      description: "Optional. Source blockchain for fromToken. Options: ethereum, solana, base, polygon, optimism, arbitrum, bsc. If not specified, will auto-detect from fromToken.",
+                      enum: ["ethereum", "solana", "base", "polygon", "optimism", "arbitrum", "bsc"],
+                    },
+                    toChain: {
+                      type: "string",
+                      description: "Optional. Destination blockchain for toToken. Options: ethereum, solana, base, polygon, optimism, arbitrum, bsc. If not specified, will auto-detect from toToken. Can be different from fromChain for cross-chain swaps!",
                       enum: ["ethereum", "solana", "base", "polygon", "optimism", "arbitrum", "bsc"],
                     },
                     reason: {
@@ -472,13 +479,16 @@ Number of positions: ${(pnl || []).length}.`;
             ]);
           } else {
             // Show confirmation dialog with chain info
-            const detectedChain = tradeParams.chain || getDefaultChainForToken(tradeParams.toToken);
+            const detectedFromChain = tradeParams.fromChain || getDefaultChainForToken(tradeParams.fromToken);
+            const detectedToChain = tradeParams.toChain || getDefaultChainForToken(tradeParams.toToken);
+            const isCrossChain = detectedFromChain !== detectedToChain;
+
             setPendingTrade(tradeParams);
             setMessages([
               ...newMessages,
               {
                 role: "assistant",
-                content: `I want to execute this trade for you:\n\n📊 **Trade Details:**\n• Sell: ${tradeParams.amount} ${tradeParams.fromToken}\n• Buy: ${tradeParams.toToken}\n• Chain: ${detectedChain.toUpperCase()}\n• Reason: ${tradeParams.reason || "User requested"}\n\nPlease confirm to proceed.`,
+                content: `I want to execute this trade for you:\n\n📊 **Trade Details:**\n• Sell: ${tradeParams.amount} ${tradeParams.fromToken} (${detectedFromChain.toUpperCase()})\n• Buy: ${tradeParams.toToken} (${detectedToChain.toUpperCase()})\n${isCrossChain ? '• Type: CROSS-CHAIN 🌉\n' : ''}• Reason: ${tradeParams.reason || "User requested"}\n\nPlease confirm to proceed.`,
               },
             ]);
           }
@@ -677,11 +687,24 @@ Number of positions: ${(pnl || []).length}.`;
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-neutral-400">Chain:</span>
+              <span className="text-neutral-400">From Chain:</span>
               <span className="font-semibold text-sky-300 uppercase">
-                {pendingTrade.chain || getDefaultChainForToken(pendingTrade.toToken)}
+                {pendingTrade.fromChain || getDefaultChainForToken(pendingTrade.fromToken)}
               </span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-neutral-400">To Chain:</span>
+              <span className="font-semibold text-emerald-300 uppercase">
+                {pendingTrade.toChain || getDefaultChainForToken(pendingTrade.toToken)}
+              </span>
+            </div>
+            {(pendingTrade.fromChain || getDefaultChainForToken(pendingTrade.fromToken)) !==
+             (pendingTrade.toChain || getDefaultChainForToken(pendingTrade.toToken)) && (
+              <div className="flex items-center justify-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2">
+                <span className="text-amber-400">🌉</span>
+                <span className="text-xs font-bold text-amber-300 uppercase">Cross-Chain Trade</span>
+              </div>
+            )}
             {pendingTrade.reason && (
               <div className="flex justify-between">
                 <span className="text-neutral-400">Reason:</span>
