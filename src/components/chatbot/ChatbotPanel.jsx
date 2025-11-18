@@ -165,6 +165,32 @@ function getDefaultChainForToken(tokenSymbol) {
   return "solana";
 }
 
+// Check if a chain is an EVM chain
+function isEVMChain(chain) {
+  return ['ethereum', 'base', 'polygon', 'optimism', 'arbitrum', 'bsc'].includes(chain);
+}
+
+// Validate cross-chain trade: allow same-chain or EVM-to-EVM, block Solana-to-EVM
+function validateCrossChainTrade(fromChain, toChain) {
+  // Same chain trades are always valid
+  if (fromChain === toChain) {
+    return { valid: true };
+  }
+
+  // Both must be EVM chains for cross-chain trading
+  const bothEVM = isEVMChain(fromChain) && isEVMChain(toChain);
+
+  if (bothEVM) {
+    return { valid: true };
+  }
+
+  // Block cross-chain between Solana and EVM
+  return {
+    valid: false,
+    message: "Cross-chain trading is only supported between EVM chains (Ethereum, Base, Polygon, Optimism, Arbitrum, BSC). Solana cross-chain trades are not supported."
+  };
+}
+
 export default function ChatbotPanel({
   openaiKey,
   onSaveKey,
@@ -253,6 +279,21 @@ Number of positions: ${(pnl || []).length}.`;
       const fromChain = tradeParams.fromChain || getDefaultChainForToken(tradeParams.fromToken);
       const toChain = tradeParams.toChain || getDefaultChainForToken(tradeParams.toToken);
 
+      // Validate cross-chain trade
+      const validation = validateCrossChainTrade(fromChain, toChain);
+      if (!validation.valid) {
+        showError(validation.message);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: `❌ ${validation.message}`,
+          },
+        ]);
+        setPendingTrade(null);
+        return;
+      }
+
       // Convert token symbols to contract addresses for their respective chains
       // This may fetch from API if not in hardcoded mapping
       const fromTokenAddress = await getTokenAddress(tradeParams.fromToken, fromChain);
@@ -325,7 +366,7 @@ Number of positions: ${(pnl || []).length}.`;
             {
               role: "system",
               content:
-                "Lu adalah asisten trading crypto yang asik dan gaul. Gaya bahasa lu santai tapi tetep informatif. Gunain bahasa slang Indonesia yang natural kayak: 'gokil', 'mantul', 'anjlok', 'meluncur', 'pumping', 'dumping', 'FOMO', 'hold/hodl', 'bullish', 'bearish', 'to the moon', 'gaspol', 'cuan', 'boncos', 'nyangkut', dll. Jangan terlalu formal. Panggil user dengan 'lu/lo' dan diri sendiri 'gue/gw'. Jawab singkat, to the point, tapi tetep helpful. Kalo ditanya soal harga crypto, fetch data real-time. Kalo execute trade, confirm dulu dengan jelas.\n\nIMPORTANT - Cross-Chain Trading:\n- CROSS-CHAIN TRADING SEKARANG SUPPORTED! User bisa trade dari chain manapun ke chain manapun\n- Support chains: ethereum, solana, base, polygon, optimism, arbitrum, bsc\n- Supported tokens per chain:\n  * Ethereum: ETH, WETH, USDC, USDT, DAI\n  * Optimism: ETH, WETH, USDC, USDT, DAI\n  * Base: ETH, WETH, USDC\n  * Arbitrum: ETH, WETH, USDC, USDT, DAI\n  * Polygon: MATIC, WMATIC, USDC, USDT, DAI\n  * BSC: BNB, WBNB, USDC, USDT, BUSD\n  * Solana: SOL, USDC, USDT, BONK, WIF, JUP\n- Auto-detect chain dari token symbol (ETH → ethereum, SOL → solana, etc)\n- User bisa bilang: \"Beli ETH di Ethereum pakai USDC dari Solana\" → cross-chain!\n- Selalu mention chains (from & to) saat confirm trade\n- Pake token symbol aja - sistem auto-convert ke contract address\n\nBe friendly, be cool, be yourself!",
+                "Lu adalah asisten trading crypto yang asik dan gaul. Gaya bahasa lu santai tapi tetep informatif. Gunain bahasa slang Indonesia yang natural kayak: 'gokil', 'mantul', 'anjlok', 'meluncur', 'pumping', 'dumping', 'FOMO', 'hold/hodl', 'bullish', 'bearish', 'to the moon', 'gaspol', 'cuan', 'boncos', 'nyangkut', dll. Jangan terlalu formal. Panggil user dengan 'lu/lo' dan diri sendiri 'gue/gw'. Jawab singkat, to the point, tapi tetep helpful. Kalo ditanya soal harga crypto, fetch data real-time. Kalo execute trade, confirm dulu dengan jelas.\n\nIMPORTANT - Cross-Chain Trading Rules:\n- CROSS-CHAIN TRADING SUPPORTED - tapi ada rules-nya!\n- ✅ ALLOWED: Cross-chain trading HANYA antara EVM chains (Ethereum, Base, Polygon, Optimism, Arbitrum, BSC)\n- ❌ NOT ALLOWED: Cross-chain trading antara Solana dan EVM chains\n- ✅ ALLOWED: Same-chain trading di chain manapun (termasuk Solana)\n- Support chains: ethereum, solana, base, polygon, optimism, arbitrum, bsc\n- Supported tokens per chain:\n  * Ethereum: ETH, WETH, USDC, USDT, DAI\n  * Optimism: ETH, WETH, USDC, USDT, DAI\n  * Base: ETH, WETH, USDC\n  * Arbitrum: ETH, WETH, USDC, USDT, DAI\n  * Polygon: MATIC, WMATIC, USDC, USDT, DAI\n  * BSC: BNB, WBNB, USDC, USDT, BUSD\n  * Solana: SOL, USDC, USDT, BONK, WIF, JUP\n- Auto-detect chain dari token symbol (ETH → ethereum, SOL → solana, etc)\n- Examples:\n  * ✅ \"Beli ETH di Ethereum pakai USDC dari Base\" → EVM to EVM, OK!\n  * ✅ \"Swap USDC ke USDT di Solana\" → Same chain, OK!\n  * ❌ \"Beli ETH di Ethereum pakai USDC dari Solana\" → Solana to EVM, BLOCKED!\n- Selalu mention chains (from & to) saat confirm trade\n- Pake token symbol aja - sistem auto-convert ke contract address\n- Kalo user mau cross-chain dari/ke Solana, jelasin bahwa itu ga supported dan suggest alternatif\n\nBe friendly, be cool, be yourself!",
             },
             {
               role: "system",

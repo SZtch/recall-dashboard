@@ -86,20 +86,57 @@ function normalizeHistory(raw) {
     : Array.isArray(raw)
     ? raw
     : [];
-  return list.map((t, i) => ({
-    id: i,
-    from: t.fromTokenSymbol || "?",
-    to: t.toTokenSymbol || "?",
-    fromAmount: Number(t.fromAmount || 0),
-    toAmount: Number(t.toAmount || 0),
-    reason: t.reason || "-",
-    time: (t.timestamp || "").slice(0, 19),
-  }));
+  return list.map((t, i) => {
+    const fromAmount = Number(t.fromAmount || 0);
+    const toAmount = Number(t.toAmount || 0);
+
+    // Calculate average price: fromAmount / toAmount
+    // This gives the price of 1 TO token in terms of FROM token
+    // Example: 100 USDC -> 0.05 ETH = 2000 USDC per ETH
+    const avgPrice = toAmount > 0 ? fromAmount / toAmount : 0;
+
+    return {
+      id: i,
+      from: t.fromTokenSymbol || "?",
+      to: t.toTokenSymbol || "?",
+      fromAmount,
+      toAmount,
+      avgPrice,
+      reason: t.reason || "-",
+      time: (t.timestamp || "").slice(0, 19),
+    };
+  });
 }
 
 function calculateTotalBalance(balances) {
   if (!balances || balances.length === 0) return 0;
   return balances.reduce((total, balance) => total + balance.usd, 0);
+}
+
+// Check if a chain is an EVM chain (ethereum, base, polygon, optimism, arbitrum, bsc)
+function isEVMChain(chain) {
+  return ['ethereum', 'base', 'polygon', 'optimism', 'arbitrum', 'bsc'].includes(chain);
+}
+
+// Validate cross-chain trade: allow same-chain or EVM-to-EVM, block Solana-to-EVM
+function validateCrossChainTrade(fromChain, toChain) {
+  // Same chain trades are always valid
+  if (fromChain === toChain) {
+    return { valid: true };
+  }
+
+  // Both must be EVM chains for cross-chain trading
+  const bothEVM = isEVMChain(fromChain) && isEVMChain(toChain);
+
+  if (bothEVM) {
+    return { valid: true };
+  }
+
+  // Block cross-chain between Solana and EVM
+  return {
+    valid: false,
+    message: "Cross-chain trading is only supported between EVM chains (Ethereum, Base, Polygon, Optimism, Arbitrum, BSC). Solana cross-chain trades are not supported."
+  };
 }
 
 // ---------------- LOADING SKELETON ----------------
@@ -253,6 +290,14 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
           setLoading(false);
           return;
         } else {
+          // Validate cross-chain trade
+          const validation = validateCrossChainTrade(fromChain, toChain);
+          if (!validation.valid) {
+            showError(validation.message);
+            setLoading(false);
+            return;
+          }
+
           const toastId = showLoading("Executing buy trade...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
@@ -273,6 +318,14 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
           setLoading(false);
           return;
         } else {
+          // Validate cross-chain trade
+          const validation = validateCrossChainTrade(fromChain, toChain);
+          if (!validation.valid) {
+            showError(validation.message);
+            setLoading(false);
+            return;
+          }
+
           const toastId = showLoading("Executing batch buy...");
           let spent = 0;
           while (spent + 1e-12 < total) {
@@ -296,6 +349,14 @@ function BuyPanel({ apiKey, env, competitionId, onAfterTrade, initialData, onCle
           setLoading(false);
           return;
         } else {
+          // Validate cross-chain trade
+          const validation = validateCrossChainTrade(fromChain, toChain);
+          if (!validation.valid) {
+            showError(validation.message);
+            setLoading(false);
+            return;
+          }
+
           const toastId = showLoading("Executing token swap...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
@@ -735,6 +796,14 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
           setLoading(false);
           return;
         } else {
+          // Validate cross-chain trade
+          const validation = validateCrossChainTrade(fromChain, toChain);
+          if (!validation.valid) {
+            showError(validation.message);
+            setLoading(false);
+            return;
+          }
+
           const toastId = showLoading("Executing sell trade...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
@@ -755,6 +824,14 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
           setLoading(false);
           return;
         } else {
+          // Validate cross-chain trade
+          const validation = validateCrossChainTrade(fromChain, toChain);
+          if (!validation.valid) {
+            showError(validation.message);
+            setLoading(false);
+            return;
+          }
+
           const toastId = showLoading("Executing batch sell...");
           let sold = 0;
           while (sold + 1e-12 < total) {
@@ -778,6 +855,14 @@ function SellPanel({ apiKey, env, competitionId, onAfterTrade }) {
           setLoading(false);
           return;
         } else {
+          // Validate cross-chain trade
+          const validation = validateCrossChainTrade(fromChain, toChain);
+          if (!validation.valid) {
+            showError(validation.message);
+            setLoading(false);
+            return;
+          }
+
           const toastId = showLoading("Executing token swap...");
           await executeTrade(apiKey, env, competitionId, {
             fromChainKey: fromChain,
@@ -1752,6 +1837,9 @@ export default function Dashboard() {
                             <th className="py-3 pr-2 text-right font-semibold sm:pr-4">
                               To
                             </th>
+                            <th className="py-3 pr-2 text-right font-semibold sm:pr-4">
+                              AVG Price
+                            </th>
                             <th className="py-3 pr-2 font-semibold sm:pr-4">Reason</th>
                             <th className="py-3 pr-4 font-semibold">Time</th>
                           </tr>
@@ -1770,6 +1858,9 @@ export default function Dashboard() {
                               </td>
                               <td className="py-4 pr-2 text-right font-mono text-sky-300 sm:pr-4 sm:py-3.5">
                                 {trow.toAmount.toFixed(4)}
+                              </td>
+                              <td className="py-4 pr-2 text-right font-mono text-emerald-300 sm:pr-4 sm:py-3.5">
+                                {trow.avgPrice > 0 ? trow.avgPrice.toFixed(6) : '-'}
                               </td>
                               <td className="py-4 pr-2 text-[10px] text-neutral-400 sm:text-xs sm:pr-4 sm:py-3.5">
                                 {trow.reason}
