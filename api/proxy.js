@@ -1,13 +1,6 @@
 // api/proxy.js - Vercel Serverless Function to proxy Recall API requests
 
-// Disable body parsing so we can handle it manually
-export const config = {
-  api: {
-    bodyParser: true, // Enable automatic body parsing
-  },
-};
-
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
